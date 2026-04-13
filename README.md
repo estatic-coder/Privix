@@ -1,173 +1,219 @@
-﻿# Privix
+﻿# 🔐 Privix
+### *Know where your data lives. Demand it back.*
 
-> Stay private, stay ahead: continuously discover and reduce your personal data exposure.
+> A **Data Privacy Monitoring & Legal Enforcement System** that automatically detects your personal data across data broker platforms and generates legally-compliant deletion requests — so you don't have to.
 
-![Build](https://img.shields.io/badge/build-passing-brightgreen)
-![Node.js](https://img.shields.io/badge/node-%3E%3D18-339933?logo=nodedotjs&logoColor=white)
-![React](https://img.shields.io/badge/frontend-React%2019-61DAFB?logo=react&logoColor=black)
-![Express](https://img.shields.io/badge/backend-Express-000000?logo=express&logoColor=white)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+---
 
-Privix is a personal data exposure monitoring and action platform that helps users find where their sensitive information appears across data brokers, public records, and breach-related surfaces.
+## 📌 Problem Statement
 
-It combines scanning, risk scoring, dashboard analytics, and remediation workflows in one experience so users can move from visibility to action quickly.
+Every day, hundreds of **data broker companies** collect, compile, and sell your personal information — your name, address, phone number, email, financial history, and more — without your knowledge or consent.
 
-## Why This Project?
+| The Problem | Why It Matters |
+|---|---|
+| 🕵️ Data brokers profile millions without consent | Your identity is exposed to strangers & bad actors |
+| 🌐 No visibility into where your data appears | Users can't protect what they can't see |
+| ⚖️ Legal removal processes are complex & time-consuming | Most people give up before completing the process |
 
-Personal data is scattered across broker sites, breach dumps, and public search surfaces. Most people do not know where they are exposed, how severe the exposure is, or what to do next.
+**Privix solves all three.**
 
-Privix addresses this by offering:
+---
 
-- Proactive discovery of exposure points
-- Prioritized risk scoring so users can focus on the highest-impact issues first
-- Action workflows (like deletion requests) to reduce exposure over time
+## 💡 Solution Overview
 
-## Problem It Solves
+Privix is a full-stack web application that gives users **complete visibility and control** over their personal data by:
 
-Privix helps solve real-world privacy and identity risk issues:
+- 🔍 **Scanning** multiple data broker platforms using your email as the identity anchor
+- 🧩 **Modular scanners** — each broker has a dedicated, plug-and-play scanner module
+- ✅ **Verification Layer** — a confidence scoring engine validates each finding before surfacing it
+- ⚖️ **Legal Engine** — automatically drafts GDPR/CCPA-compliant deletion request letters
+- 📊 **Tracking System** — monitors the status of every submitted deletion request
 
-- Hidden exposure: users cannot easily track where their PII appears
-- Manual effort: checking multiple sources one by one is slow and inconsistent
-- No prioritization: users need risk context, not just raw findings
-- Weak follow-through: discovery without remediation does not improve privacy posture
+---
 
-## Target Users
+## ✨ Features
 
-- Privacy-conscious individuals
-- Security-aware consumers and families
-- Freelancers and professionals with strong digital footprints
-- Early-stage teams building privacy tooling concepts
+- 🔍 **Data Exposure Detection** — Scan popular data broker sites for your personal information
+- ✅ **Confidence-Based Verification** — Each result is scored for accuracy before being flagged
+- ⚖️ **Legal Deletion Request Generator** — Auto-generates formal, jurisdiction-aware deletion letters
+- 📊 **Request Tracking Dashboard** — A centralized view of all pending, sent, and resolved requests
+- 🔁 **Continuous Monitoring** *(Simulated)* — Periodic re-scanning to detect new data exposures
 
-## Features
+---
 
-- Multi-source scan initiation (name, email, phone, username, password/hash signals)
-- Exposure findings aggregation and dashboard summaries
-- Risk visualization and alert tracking
-- Deletion/remediation request workflow
-- Background recheck and action jobs
-- Health endpoint for service monitoring
-
-## Tech Stack
-
-### Frontend
-
-- React 19
-- React Router
-- Recharts
-- Vite
-- Tailwind CSS (configured)
-
-### Backend
-
-- Node.js
-- Express
-- CORS middleware
-
-### Engine/Platform Modules
-
-- Custom scanner engine
-- Matcher/risk scoring engine
-- Scheduler jobs for rechecks and actions
-- In-memory data store (local development)
-
-## How It Works
-
-1. User submits identifiers from the scan setup screen.
-2. Backend scan controller triggers scanning services and broker/search modules.
-3. Findings are validated, matched, and scored by the matcher engine.
-4. Aggregation services generate dashboard stats, alerts, and risk summaries.
-5. Users review findings and trigger actions (for example, deletion requests).
-6. Scheduled jobs recheck exposure and keep results up to date.
-
-## Folder Structure
+## 🏗️ System Architecture
 
 ```text
-.
-├── backend/
-│   └── src/
-│       ├── controllers/
-│       ├── routes/
-│       └── services/
-├── frontend/
-│   └── src/
-│       ├── components/
-│       ├── pages/
-│       └── services/
-├── scanner-engine/
-├── matcher-engine/
-├── scheduler/
-├── database/
-└── README.md
+┌─────────────────────────────────────────────────────────────┐
+│                        PRIVIX SYSTEM                        │
+├──────────────┬──────────────┬──────────────┬────────────────┤
+│  Identity    │   Scanner    │ Verification │  Legal Engine  │
+│    Layer     │   Modules    │    Engine    │                │
+│              │              │              │                │
+│ • Email      │ • Broker 1   │ • Confidence │ • GDPR/CCPA    │
+│   Normali-   │ • Broker 2   │   Scoring    │   Templates    │
+│   zation     │ • Broker 3   │ • Data       │ • Auto-fill    │
+│ • Identity   │ • (Modular   │   Matching   │ • PDF/Text     │
+│   Hashing    │   + Pluggable│ • Threshold  │   Output       │
+│              │   )          │   Filtering  │                │
+├──────────────┴──────────────┴──────────────┴────────────────┤
+│                    TRACKING SYSTEM                          │
+│         Status: Pending → Submitted → Resolved              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Installation
+### Layer Breakdown
+
+| Layer | Responsibility |
+|---|---|
+| **Identity Layer** | Normalizes and hashes input email; constructs search identity |
+| **Scanner Modules** | Dedicated per-broker scrapers/API consumers (`broker_scanner_1`, `2`, `3`) |
+| **Verification Engine** | Confidence scoring (0–100%) to filter false positives |
+| **Legal Engine** | Generates formal deletion request letters per jurisdiction |
+| **Tracking System** | Persists request state; surfaces status on the dashboard |
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Backend** | FastAPI (Python) |
+| **Frontend** | HTML5 / CSS3 / Vanilla JavaScript |
+| **Database** | SQLite (via SQLAlchemy ORM) |
+| **Schema Validation** | Pydantic (schemas.py) |
+| **API Design** | RESTful JSON APIs |
+| **Dev Tools** | Git, Uvicorn, Python `venv` |
+
+---
+
+## 🔄 How It Works — User Flow
+
+```text
+1. 📧  User enters their email address
+         ↓
+2. 🔍  System runs modular broker scanners in parallel
+         ↓
+3. 📊  Results returned with confidence scores (e.g., 87% match)
+         ↓
+4. ⚖️  User reviews findings & clicks "Request Deletion"
+         ↓
+5. 📝  Legal deletion letter auto-generated for each broker
+         ↓
+6. 📬  Request status tracked: Pending → Submitted → Resolved
+```
+
+---
+
+## 🚀 Installation & Setup
 
 ### Prerequisites
+- Python 3.9+
+- Git
 
-- Node.js 18+
-- npm 9+
+---
 
-### Steps
+### 🔧 Backend Setup
 
 ```bash
-# 1) Clone the repository
-git clone <your-repo-url>
-cd Privix
+# 1. Clone the repository
+git clone https://github.com/your-username/privix.git
+cd privix
 
-# 2) Install all dependencies (root, backend, frontend)
-npm run install:all
+# 2. Create and activate a virtual environment
+python -m venv venv
 
-# 3) Start backend + frontend together
-npm run dev
+# Windows
+venv\Scripts\activate
+
+# macOS/Linux
+source venv/bin/activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Start the FastAPI server
+cd backend
+uvicorn main:app --reload --port 8000
 ```
 
-By default:
+> The API will be live at `http://localhost:8000`
+> Interactive docs at `http://localhost:8000/docs`
 
-- Frontend runs on Vite default port (usually `http://localhost:5173`)
-- Backend API runs on `http://localhost:3001`
+---
 
-## Usage
+### 🖥️ Frontend Setup
 
-1. Open the frontend in your browser.
-2. Go to the scan page and submit available personal identifiers.
-3. Wait for scan progress to complete.
-4. Review dashboard metrics, findings, and alerts.
-5. Trigger action requests for exposed records.
+```bash
+# Navigate to the frontend directory
+cd frontend
 
-### API Endpoints (Core)
-
-```http
-GET  /api/health
-POST /api/scans
-GET  /api/scans/:scanId
-
-GET  /api/results/dashboard/:userId
-GET  /api/results/findings/:userId
-GET  /api/results/stats/:userId
-GET  /api/results/alerts/:userId
-POST /api/results/action
-POST /api/results/alerts/read
+# Simply open in your browser
+start index.html        # Windows
+open index.html         # macOS
+xdg-open index.html     # Linux
 ```
 
-## Future Enhancements
+> Make sure the backend is running before interacting with the frontend.
 
-- Add persistent database support (PostgreSQL/MongoDB)
-- Introduce authentication and user accounts
-- Add source connectors for more broker/search providers
-- Support email/SMS alert delivery channels
-- Add PDF privacy reports and exportable remediation plans
-- Containerize services with Docker and add CI pipelines
+---
 
-## Contributors
+## 🎮 Demo Instructions
 
-- V M Samerath Kumar
-- Blessy Mol Charls
-- Karthik Vivek
-- Annu Philip
+> For **hackathon judges and testers** — here's the fastest path to see Privix in action:
 
-## License
+1. **Start the backend** using the steps above
+2. **Open `frontend/index.html`** in your browser
+3. **Enter a test email** (e.g., `testuser@example.com`) in the scan field
+4. Click **"Scan Now"** — the system will run all broker scanners
+5. Review the **results panel** with confidence scores per broker
+6. Click **"Generate Deletion Request"** on any positive finding
+7. View and download the **auto-generated legal letter**
+8. Navigate to the **Dashboard** tab to see the request tracking status
 
-This project is licensed under the MIT License.
+---
 
-See the LICENSE file for details.
+## 🌍 Alignment with the United Nations SDGs
 
+### 🕊️ SDG 16 — Peace, Justice & Strong Institutions
+
+> *"Promote peaceful and inclusive societies, provide access to justice for all, and build effective, accountable institutions."*
+
+Privix directly supports SDG 16 by:
+
+- 🔓 **Empowering individuals** with tools to exercise their legal rights (GDPR, CCPA)
+- ⚖️ **Lowering barriers to justice** — legal compliance shouldn't require a lawyer
+- 🏛️ **Holding data brokers accountable** through structured, formal deletion requests
+- 🌐 **Promoting digital sovereignty** — your data, your rights, your control
+
+---
+
+## 🔮 Future Improvements
+
+| Improvement | Description |
+|---|---|
+| 🌐 **More Broker Coverage** | Expand scanner modules to cover 50+ data brokers |
+| 🤖 **AI-Powered Verification** | Use NLP/ML to more accurately identify personal data matches |
+| 🔁 **Full Automation** | Auto-submit deletion requests without manual intervention |
+| 🌍 **Multi-Jurisdiction Support** | Support GDPR (EU), CCPA (California), PDPB (India) & more |
+| 📱 **Mobile App** | Native iOS & Android clients for on-the-go monitoring |
+| 🔔 **Alert System** | Email/SMS notifications when new data exposures are found |
+| 🔐 **OAuth Login** | Secure multi-account management with SSO providers |
+
+---
+
+## 👥 Contributors
+
+| Name | Role |
+|---|---|
+| **Blessy Mol Charls** | |
+| **Samerath Kumar V M** | |
+| **Karthik Vivek** | |
+| **Annu Philip** | |
+
+---
+
+## 📄 License
+
+This project is built for academic and hackathon demonstration purposes.
+For licensing inquiries, please contact the project contributors.
