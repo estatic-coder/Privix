@@ -33,11 +33,13 @@ Privix is a full-stack web application that gives users **complete visibility an
 
 ## ✨ Features
 
-- 🔍 **Data Exposure Detection** — Scan popular data broker sites for your personal information
-- ✅ **Confidence-Based Verification** — Each result is scored for accuracy before being flagged
-- ⚖️ **Legal Deletion Request Generator** — Auto-generates formal, jurisdiction-aware deletion letters
-- 📊 **Request Tracking Dashboard** — A centralized view of all pending, sent, and resolved requests
-- 🔁 **Continuous Monitoring** *(Simulated)* — Periodic re-scanning to detect new data exposures
+- 🔍 **Data Exposure Detection** — Scan popular data broker sites for your personal information.
+- ✅ **Confidence-Based Verification** — Each result is scored for accuracy before being flagged.
+- 🎬 **Dynamic UX & Scan Animation** — Sequential, real-time scan progress synced with data retrieval.
+- 🌡️ **Risk Badge & Privacy Score** — Automatically calculates a 0-100 privacy score and visualizes risk levels (LOW, MEDIUM, HIGH).
+- ⚖️ **Legal Deletion Request Generator** — Auto-generates formal, jurisdiction-aware deletion letters in a clean modal view.
+- 📊 **Request Tracking Dashboard** — A centralized view of all pending, sent, and resolved requests.
+- 🔁 **Stateful UI Design** — Smooth transitions, empty-state handling, and one-click "New Scan" interface resets.
 
 ---
 
@@ -162,14 +164,16 @@ xdg-open index.html     # Linux
 
 > For **hackathon judges and testers** — here's the fastest path to see Privix in action:
 
-1. **Start the backend** using the steps above
-2. **Open `frontend/index.html`** in your browser
-3. **Enter a test email** (e.g., `testuser@example.com`) in the scan field
-4. Click **"Scan Now"** — the system will run all broker scanners
-5. Review the **results panel** with confidence scores per broker
-6. Click **"Generate Deletion Request"** on any positive finding
-7. View and download the **auto-generated legal letter**
-8. Navigate to the **Dashboard** tab to see the request tracking status
+1. **Start the backend** using the steps above.
+2. **Open `frontend/index.html`** in your browser.
+3. **Use a Demo Email** by clicking one of the predefined "Try demo emails" chips (e.g., `test@example.com`), or enter your own email address.
+4. Click **"Scan Now"** — watch the sequential scanning animation as the system queries data brokers.
+5. Review the **Results Panel** with your generated Privacy Score, Risk Badge, and individual confidence scores.
+6. Click **"Request Deletion"** on any positive finding to open the GDPR Deletion Request modal.
+7. Click **"Copy Email"** to copy the auto-generated legal letter text.
+8. Navigate to the **Requests** tab in the top navigation bar to see your tracked requests.
+9. Click **"Mark Resolved"** to update request statuses.
+10. Click **"← New Scan"** to experience the clean UI reset and clear all data.
 
 ---
 
