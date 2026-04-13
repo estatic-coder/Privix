@@ -1,4 +1,4 @@
-﻿# 🔐 Privix
+# 🔐 Privix
 ### *Know where your data lives. Demand it back.*
 
 > A **Data Privacy Monitoring & Legal Enforcement System** that automatically detects your personal data across data broker platforms and generates legally-compliant deletion requests — so you don't have to.
@@ -80,12 +80,12 @@ Privix is a full-stack web application that gives users **complete visibility an
 
 | Layer | Technology |
 |---|---|
-| **Backend** | FastAPI (Python) |
-| **Frontend** | HTML5 / CSS3 / Vanilla JavaScript |
-| **Database** | SQLite (via SQLAlchemy ORM) |
-| **Schema Validation** | Pydantic (schemas.py) |
+| **Backend** | Node.js / Express |
+| **Frontend** | React, TypeScript, Vite, TailwindCSS |
+| **Scanner Engine** | Node.js (Modular Scrapers) |
+| **Scheduler** | Node.js Cron Jobs |
 | **API Design** | RESTful JSON APIs |
-| **Dev Tools** | Git, Uvicorn, Python `venv` |
+| **Dev Tools** | Git, npm, concurrently |
 
 ---
 
@@ -110,53 +110,29 @@ Privix is a full-stack web application that gives users **complete visibility an
 ## 🚀 Installation & Setup
 
 ### Prerequisites
-- Python 3.9+
+- Node.js (v16+)
 - Git
 
 ---
 
-### 🔧 Backend Setup
+### 🔧 Full-Stack Setup
+
+This project uses `concurrently` to run both the frontend and backend in one command.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/privix.git
+git clone https://github.com/estatic-coder/Privix
 cd privix
 
-# 2. Create and activate a virtual environment
-python -m venv venv
+# 2. Install all dependencies
+npm run install:all
 
-# Windows
-venv\Scripts\activate
-
-# macOS/Linux
-source venv/bin/activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Start the FastAPI server
-cd backend
-uvicorn main:app --reload --port 8000
+# 3. Start the application
+npm run dev
 ```
 
-> The API will be live at `http://localhost:8000`
-> Interactive docs at `http://localhost:8000/docs`
-
----
-
-### 🖥️ Frontend Setup
-
-```bash
-# Navigate to the frontend directory
-cd frontend
-
-# Simply open in your browser
-start index.html        # Windows
-open index.html         # macOS
-xdg-open index.html     # Linux
-```
-
-> Make sure the backend is running before interacting with the frontend.
+> The Backend API will be live at `http://localhost:3001`
+> The Frontend UI will be automatically opened by Vite (typically `http://localhost:5173`)
 
 ---
 
@@ -164,8 +140,8 @@ xdg-open index.html     # Linux
 
 > For **hackathon judges and testers** — here's the fastest path to see Privix in action:
 
-1. **Start the backend** using the steps above.
-2. **Open `frontend/index.html`** in your browser.
+1. **Start the application** by running `npm run dev` in the root directory.
+2. **Open the Frontend UI** in your browser (usually `http://localhost:5173`).
 3. **Use a Demo Email** by clicking one of the predefined "Try demo emails" chips (e.g., `test@example.com`), or enter your own email address.
 4. Click **"Scan Now"** — watch the sequential scanning animation as the system queries data brokers.
 5. Review the **Results Panel** with your generated Privacy Score, Risk Badge, and individual confidence scores.

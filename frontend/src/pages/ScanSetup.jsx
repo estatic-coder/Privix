@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { startScan } from '../services/api';
 import BreachReveal from '../components/BreachReveal';
 
-export default function ScanSetup({ onScanComplete }) {
+export default function ScanSetup({ onScanComplete, onNewScan }) {
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -38,6 +38,9 @@ export default function ScanSetup({ onScanComplete }) {
       setError('Please enter at least a name or email address.');
       return;
     }
+
+    // Reset any previous scan results in App state before starting fresh
+    if (onNewScan) onNewScan();
 
     setScanning(true);
     setProgress(0);

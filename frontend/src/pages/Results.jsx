@@ -1,53 +1,49 @@
 // ============================================================
-// Anonymous — Page: Results
+// Privix — Page: Scan Results
+// ============================================================
+// Shows findings from the latest completed scan only.
+// Findings are passed as a prop from App (never fetched stale).
+// Filtering is performed locally — no polling, no stale data.
 // ============================================================
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ExposureCard from '../components/ExposureCard';
 import FilterPanel from '../components/FilterPanel';
-import { getFindings, requestDeletion } from '../services/api';
+import { requestDeletion } from '../services/api';
 
-export default function Results({ userId }) {
-  const [findings, setFindings] = useState([]);
-  const [loading, setLoading] = useState(false);
+export default function Results({ userId, hasScanned, findings, riskScore, onFindingsUpdate }) {
   const [filters, setFilters] = useState({});
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (userId) {
-      loadFindings(false);
-      const interval = setInterval(() => loadFindings(true), 3000);
-      return () => clearInterval(interval);
-    }
-  }, [userId, filters]);
-
-  async function loadFindings(silent = false) {
-    try {
-      if (!silent) setLoading(true);
-      const res = await getFindings(userId, filters);
-      if (res.success) {
-        setFindings(res.data);
-      }
-    } catch (err) {
-      console.error('Failed to load findings:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Filter findings locally — no API round-trip needed
+  const filtered = useMemo(() => {
+    let result = [...findings];
+    if (filters.status) result = result.filter((f) => f.status === filters.status);
+    if (filters.risk)   result = result.filter((f) => f.risk   === filters.risk);
+    if (filters.source) result = result.filter((f) =>
+      f.source.toLowerCase().includes(filters.source.toLowerCase())
+    );
+    // Sort by confidence descending
+    result.sort((a, b) => b.confidence - a.confidence);
+    return result;
+  }, [findings, filters]);
 
   async function handleDeletion(findingId) {
+    if (!userId) return;
     try {
       await requestDeletion(findingId, userId);
-      loadFindings();
+      // Optimistic local update — no re-fetch required
+      onFindingsUpdate((prev) =>
+        prev.map((f) => f.id === findingId ? { ...f, status: 'action_pending' } : f)
+      );
     } catch (err) {
       console.error('Deletion failed:', err);
     }
   }
 
-  function handleFilterChange(newFilters) {
-    setFilters(newFilters);
-  }
-
-  if (!userId) {
+  // ── Empty state: no scan has been run this session ────────────────────
+  if (!hasScanned) {
     return (
       <div>
         <div className="page-header">
@@ -59,11 +55,19 @@ export default function Results({ userId }) {
           <div className="empty-icon">📋</div>
           <h3>No results yet</h3>
           <p>Run a scan first to see your exposure results here.</p>
+          <button
+            className="btn btn-primary btn-lg"
+            style={{ marginTop: '24px' }}
+            onClick={() => navigate('/scan')}
+          >
+            🔍 Start a Scan
+          </button>
         </div>
       </div>
     );
   }
 
+  // ── Results view ──────────────────────────────────────────────────────
   return (
     <div>
       <div className="page-header">
@@ -71,21 +75,25 @@ export default function Results({ userId }) {
           Scan <span className="highlight">Results</span>
         </h1>
         <p className="page-description">
-          {findings.length} finding{findings.length !== 1 ? 's' : ''} across all scans.
+          {findings.length} finding{findings.length !== 1 ? 's' : ''} from your latest scan.
+          {riskScore !== null && (
+            <span style={{ marginLeft: '12px', fontWeight: 600 }}>
+              Risk Score: <span className="highlight">{riskScore}/100</span>
+            </span>
+          )}
         </p>
       </div>
 
-      <FilterPanel onFilterChange={handleFilterChange} />
+      <FilterPanel onFilterChange={setFilters} />
 
-      {loading ? (
-        <div className="loading-overlay">
-          <div className="spinner spinner-lg"></div>
-          <p>Loading results...</p>
-        </div>
-      ) : findings.length > 0 ? (
+      {filtered.length > 0 ? (
         <div className="results-grid">
-          {findings.map((finding, index) => (
-            <div key={finding.id} className="animate-in" style={{ animationDelay: `${index * 0.05}s` }}>
+          {filtered.map((finding, index) => (
+            <div
+              key={finding.id || finding.source}
+              className="animate-in"
+              style={{ animationDelay: `${index * 0.05}s` }}
+            >
               <ExposureCard
                 finding={finding}
                 onRequestDeletion={handleDeletion}
@@ -95,9 +103,19 @@ export default function Results({ userId }) {
         </div>
       ) : (
         <div className="empty-state">
-          <div className="empty-icon">🔎</div>
-          <h3>No findings match your filters</h3>
-          <p>Try adjusting the filters above or run a new scan.</p>
+          <div className="empty-icon">
+            {findings.length === 0 ? '🎉' : '🔎'}
+          </div>
+          <h3>
+            {findings.length === 0
+              ? 'No exposures found!'
+              : 'No findings match your filters'}
+          </h3>
+          <p>
+            {findings.length === 0
+              ? 'Great news — no data exposures were detected in this scan.'
+              : 'Try adjusting the filters above or run a new scan.'}
+          </p>
         </div>
       )}
     </div>

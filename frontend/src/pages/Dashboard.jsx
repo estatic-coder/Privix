@@ -1,5 +1,8 @@
 // ============================================================
-// Anonymous — Page: Dashboard
+// Privix — Page: Dashboard
+// ============================================================
+// Shows aggregate stats for the current user.
+// Guards against rendering before a scan has been completed.
 // ============================================================
 
 import { useState, useEffect } from 'react';
@@ -8,20 +11,20 @@ import ExposureCard from '../components/ExposureCard';
 import { getDashboard, requestDeletion } from '../services/api';
 import { DashboardRiskChart, RiskGauge } from '../components/RiskChart';
 
-export default function Dashboard({ userId, onDataUpdate }) {
+export default function Dashboard({ userId, hasScanned }) {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Only fetch dashboard when the user has actually scanned
   useEffect(() => {
-    if (userId) {
+    if (userId && hasScanned) {
       loadDashboard(false);
-      const interval = setInterval(() => loadDashboard(true), 3000);
+      const interval = setInterval(() => loadDashboard(true), 30000);
       return () => clearInterval(interval);
-    } else {
-      setLoading(false);
     }
-  }, [userId]);
+    // No scan yet — nothing to load
+  }, [userId, hasScanned]);
 
   async function loadDashboard(silent = false) {
     try {
@@ -29,7 +32,6 @@ export default function Dashboard({ userId, onDataUpdate }) {
       const res = await getDashboard(userId);
       if (res.success) {
         setData(res.data);
-        if (onDataUpdate) onDataUpdate(res.data);
       }
     } catch (err) {
       console.error('Dashboard load failed:', err);
@@ -47,6 +49,7 @@ export default function Dashboard({ userId, onDataUpdate }) {
     }
   }
 
+  // ── Loading state ─────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="loading-overlay">
@@ -56,7 +59,8 @@ export default function Dashboard({ userId, onDataUpdate }) {
     );
   }
 
-  if (!userId || !data) {
+  // ── Empty state: user has never scanned (or new session) ──────────────
+  if (!hasScanned || !userId) {
     return (
       <div>
         <div className="page-header">
@@ -83,6 +87,25 @@ export default function Dashboard({ userId, onDataUpdate }) {
     );
   }
 
+  // ── Empty state: scanned but dashboard data not loaded yet ─────────────
+  if (!data) {
+    return (
+      <div>
+        <div className="page-header">
+          <h1 className="page-title">
+            Exposure <span className="highlight">Dashboard</span>
+          </h1>
+        </div>
+        <div className="empty-state">
+          <div className="empty-icon">📊</div>
+          <h3>Loading your results…</h3>
+          <p>Fetching your exposure summary from the server.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Full dashboard ─────────────────────────────────────────────────────
   const { stats, recentFindings, totalScans, lastScan, unreadAlerts } = data;
 
   return (
@@ -103,7 +126,7 @@ export default function Dashboard({ userId, onDataUpdate }) {
         </div>
       )}
 
-      {/* New Modern Chart Layout */}
+      {/* Chart grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 2fr', gap: '24px', marginBottom: '32px' }}>
         <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: 0 }}>
           <h3 style={{ position: 'absolute', top: 20, left: 20, margin: 0, fontSize: '1rem', color: 'var(--text-secondary)' }}>Overall Risk</h3>
