@@ -12,14 +12,6 @@ Privix is a personal data exposure monitoring and action platform that helps use
 
 It combines scanning, risk scoring, dashboard analytics, and remediation workflows in one experience so users can move from visibility to action quickly.
 
-## Demo
-
-Add your live demo link and/or screenshots here.
-
-- Live URL: _Coming soon_
-- Product walkthrough: _Coming soon_
-- Screenshots/GIFs: _Coming soon_
-
 ## Why This Project?
 
 Personal data is scattered across broker sites, breach dumps, and public search surfaces. Most people do not know where they are exposed, how severe the exposure is, or what to do next.
@@ -168,8 +160,10 @@ POST /api/results/alerts/read
 
 ## Contributors
 
-- Blessing (Project Owner)
-- Add more contributors here
+- V M Samerath Kumar
+- Blessy Mol Charls
+- Karthik Vivek
+- Annu Philip
 
 ## License
 
