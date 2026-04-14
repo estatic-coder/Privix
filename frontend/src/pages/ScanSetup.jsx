@@ -2,10 +2,17 @@
 // Anonymous — Page: Scan Setup
 // ============================================================
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { startScan } from '../services/api';
 import BreachReveal from '../components/BreachReveal';
+
+// Default module list — used to reset cleanly between scans
+const DEFAULT_MODULES = [
+  { name: 'DataBrokerX', status: 'pending' },
+  { name: 'PeopleFinderY', status: 'pending' },
+  { name: 'GoogleSearch', status: 'pending' },
+];
 
 export default function ScanSetup({ onScanComplete, onNewScan }) {
   const [form, setForm] = useState({
@@ -17,43 +24,61 @@ export default function ScanSetup({ onScanComplete, onNewScan }) {
   });
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [moduleStatuses, setModuleStatuses] = useState([
-    { name: 'DataBrokerX', status: 'pending' },
-    { name: 'PeopleFinderY', status: 'pending' },
-    { name: 'GoogleSearch', status: 'pending' },
-  ]);
+  const [moduleStatuses, setModuleStatuses] = useState(DEFAULT_MODULES);
   const [error, setError] = useState('');
-  const [breachFindings, setBreachFindings] = useState(null); // holds findings for animation
+  const [breachFindings, setBreachFindings] = useState(null); // holds findings for breach reveal animation
   const navigate = useNavigate();
+
+  // Tracks active timers so they can be cancelled when a new scan starts,
+  // preventing duplicate state updates from stale closures.
+  const activeTimersRef = useRef([]);
+  const progressIntervalRef = useRef(null);
+
+  // Pending scan result — held until both API and animation (if any) are done
+  const pendingScanDataRef = useRef(null);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
+  // ── Helper: cancel all timers from the previous scan run ────────────
+  function cancelActiveTimers() {
+    activeTimersRef.current.forEach((id) => clearTimeout(id));
+    activeTimersRef.current = [];
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
-    setError('');
 
     if (!form.name && !form.email) {
       setError('Please enter at least a name or email address.');
       return;
     }
 
-    // Reset any previous scan results in App state before starting fresh
+    // ── 1. Cancel any lingering timers from a previous scan ──────────────
+    cancelActiveTimers();
+
+    // ── 2. Reset ALL local scan UI state before starting fresh ───────────
+    setError('');
+    setBreachFindings(null);
+    pendingScanDataRef.current = null;
+    setProgress(0);
+    setModuleStatuses(DEFAULT_MODULES.map((m) => ({ ...m, status: 'running' })));
+    setScanning(true);
+
+    // ── 3. Notify App to reset global findings/riskScore/hasScanned ───────
     if (onNewScan) onNewScan();
 
-    setScanning(true);
-    setProgress(0);
-
-    // Simulate progress animation
-    setModuleStatuses((prev) =>
-      prev.map((m) => ({ ...m, status: 'running' }))
-    );
-
-    const progressInterval = setInterval(() => {
+    // ── 4. Start animated progress bar (caps at 90 until API resolves) ───
+    progressIntervalRef.current = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 90) {
-          clearInterval(progressInterval);
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
           return 90;
         }
         return prev + Math.random() * 15;
@@ -61,60 +86,68 @@ export default function ScanSetup({ onScanComplete, onNewScan }) {
     }, 400);
 
     // Stagger module completion visuals
-    setTimeout(() => {
+    const t1 = setTimeout(() => {
       setModuleStatuses((prev) =>
         prev.map((m, i) => (i === 0 ? { ...m, status: 'completed' } : m))
       );
     }, 1200);
-
-    setTimeout(() => {
+    const t2 = setTimeout(() => {
       setModuleStatuses((prev) =>
         prev.map((m, i) => (i === 1 ? { ...m, status: 'completed' } : m))
       );
     }, 2000);
+    activeTimersRef.current.push(t1, t2);
 
     try {
+      // ── 5. Await API response ─────────────────────────────────────────
       const result = await startScan(form);
 
-      clearInterval(progressInterval);
+      // Clear progress animation
+      cancelActiveTimers();
       setProgress(100);
-
-      setModuleStatuses((prev) =>
-        prev.map((m) => ({ ...m, status: 'completed' }))
-      );
+      setModuleStatuses(DEFAULT_MODULES.map((m) => ({ ...m, status: 'completed' })));
 
       if (result.success && result.data) {
-        if (onScanComplete) {
-          onScanComplete(result.data);
-        }
-
         const findings = result.data.findings || [];
 
         if (findings.length > 0) {
-          // Show breach reveal animation, then navigate
-          setTimeout(() => {
-            setBreachFindings(findings);
-          }, 600);
+          // ── 6a. Store result and show BreachReveal — onScanComplete is
+          //        called only AFTER the animation finishes (in
+          //        handleBreachRevealComplete), so Results never receives
+          //        data before the user reaches the page.
+          pendingScanDataRef.current = result.data;
+          const t3 = setTimeout(() => setBreachFindings(findings), 600);
+          activeTimersRef.current.push(t3);
         } else {
-          // No breaches — navigate straight to results
-          setTimeout(() => {
-            navigate('/results');
-          }, 800);
+          // ── 6b. No breaches — commit results now, navigate after a brief pause
+          if (onScanComplete) onScanComplete(result.data);
+          const t4 = setTimeout(() => navigate('/results'), 800);
+          activeTimersRef.current.push(t4);
         }
+      } else {
+        // API returned success:false
+        setError('Scan returned no data. Please try again.');
+        setScanning(false);
+        setProgress(0);
+        setModuleStatuses(DEFAULT_MODULES);
       }
     } catch (err) {
-      clearInterval(progressInterval);
+      cancelActiveTimers();
       setError(err.message || 'Scan failed. Please try again.');
       setScanning(false);
       setProgress(0);
-      setModuleStatuses((prev) =>
-        prev.map((m) => ({ ...m, status: 'pending' }))
-      );
+      setModuleStatuses(DEFAULT_MODULES);
     }
   }
 
+  // Called by BreachReveal when its animation finishes (or user skips it)
   function handleBreachRevealComplete() {
     setBreachFindings(null);
+    // Commit results to App state only now — Results page will have fresh data
+    if (pendingScanDataRef.current && onScanComplete) {
+      onScanComplete(pendingScanDataRef.current);
+      pendingScanDataRef.current = null;
+    }
     navigate('/results');
   }
 
@@ -259,13 +292,13 @@ export default function ScanSetup({ onScanComplete, onNewScan }) {
                   <span style={{
                     fontSize: '0.75rem',
                     color: mod.status === 'completed' ? 'var(--accent-success)' :
-                           mod.status === 'running' ? 'var(--accent-warning)' :
-                           'var(--text-muted)',
+                      mod.status === 'running' ? 'var(--accent-warning)' :
+                        'var(--text-muted)',
                     fontWeight: 600,
                   }}>
                     {mod.status === 'completed' ? '✓ Done' :
-                     mod.status === 'running' ? 'Scanning...' :
-                     'Waiting'}
+                      mod.status === 'running' ? 'Scanning...' :
+                        'Waiting'}
                   </span>
                 </div>
               ))}

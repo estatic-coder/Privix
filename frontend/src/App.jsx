@@ -16,7 +16,7 @@ function AppContent() {
   const [userId, setUserId] = useState(localStorage.getItem('anonymous_userid') || null);
   const [alertCount, setAlertCount] = useState(0);
 
-  // hasScanned is false until the user completes a scan in this session
+  // hasScanned: true only after a scan has fully completed this session
   const [hasScanned, setHasScanned] = useState(
     () => sessionStorage.getItem(SESSION_SCANNED_KEY) === 'true'
   );
@@ -56,11 +56,11 @@ function AppContent() {
       localStorage.setItem('anonymous_userid', data.user.id);
     }
 
-    // Deduplicate findings by source (defensive frontend layer)
+    // Deduplicate findings — use source+id combined key for robustness
     const raw = Array.isArray(data.findings) ? data.findings : [];
     const seen = new Set();
     const deduped = raw.filter((f) => {
-      const key = f.source || f.id;
+      const key = `${f.source || ''}::${f.id || ''}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -77,6 +77,7 @@ function AppContent() {
 
   // Called by ScanSetup before starting a new scan — full reset
   const handleNewScan = () => {
+    // Clear all scan state so Results shows empty/blocked if visited early
     setHasScanned(false);
     setLatestFindings([]);
     setLatestRiskScore(null);
