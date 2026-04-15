@@ -241,18 +241,6 @@ Privix directly supports SDG 16 by:
 | 🗂️ **Export Reports** | Download your full exposure report as a PDF or CSV |
 
 ---
-
-## 👥 Contributors
-
-| Name | Role |
-|---|---|
-| **Blessy Mol Charls** | |
-| **Samerath Kumar V M** | |
-| **Karthik Vivek** | |
-| **Annu Philip** | |
-
----
-
 ## 📋 Changelog
 
 ### v2.1 — Scan System Hardening *(April 2026)*
