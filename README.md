@@ -3,8 +3,6 @@
 
 > A **full-stack Data Privacy Monitoring & Legal Enforcement System** that automatically detects personal data across data broker platforms, visualizes exposure risk in real-time, and generates legally-compliant deletion requests — so you don't have to.
 
-![Privix Banner](image.png)
-
 ---
 
 ## 📌 Problem Statement
