@@ -72,6 +72,14 @@ export default function ScanSetup({
     return result;
   }, [findings, filters]);
 
+  // Tracks active timers so they can be cancelled when a new scan starts,
+  // preventing duplicate state updates from stale closures.
+  const activeTimersRef = useRef([]);
+  const progressIntervalRef = useRef(null);
+
+  // Pending scan result — held until both API and animation (if any) are done
+  const pendingScanDataRef = useRef(null);
+
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
@@ -131,6 +139,7 @@ export default function ScanSetup({
     activeTimersRef.current.push(tModule1, tModule2);
 
     try {
+      // ── 5. Await API response ─────────────────────────────────────────
       const result = await startScan(form);
       cancelActiveTimers();
       setProgress(100);
@@ -158,6 +167,7 @@ export default function ScanSetup({
     }
   }
 
+  // Called by BreachReveal when its animation finishes (or user skips it)
   function handleBreachRevealComplete() {
     setBreachFindings(null);
     setScanning(false);
