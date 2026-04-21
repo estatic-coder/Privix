@@ -6,6 +6,15 @@
 
 const express = require('express');
 const cors = require('cors');
+
+// ── CORS Configuration ───────────────────────────────────────
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+const corsOptions = {
+  origin: CORS_ORIGIN,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
 const scanRoutes = require('./routes/scanRoutes');
 const resultRoutes = require('./routes/resultRoutes');
 const recheckJob = require('../../scheduler/jobs/recheckJob');
@@ -15,7 +24,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // ── Middleware ────────────────────────────────────────────────
-app.use(cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Pre-flight for all routes
 app.use(express.json());
 
 // Request logger
@@ -45,15 +55,27 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`\n╔══════════════════════════════════════════════╗`);
   console.log(`║   🔒 Privix API Server                       ║`);
   console.log(`║   Running on http://localhost:${PORT}            ║`);
+  console.log(`║   CORS origin: ${CORS_ORIGIN}`);
   console.log(`╚══════════════════════════════════════════════╝\n`);
-  
+
   // Start background jobs
   recheckJob.start();
   actionJob.start();
+});
+
+// ── Graceful shutdown (required by Render / cloud hosts) ─────
+process.on('SIGTERM', () => {
+  console.log('[Server] SIGTERM received — shutting down gracefully...');
+  recheckJob.stop();
+  actionJob.stop();
+  server.close(() => {
+    console.log('[Server] HTTP server closed.');
+    process.exit(0);
+  });
 });
 
 module.exports = app;

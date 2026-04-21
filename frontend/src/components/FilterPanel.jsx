@@ -1,11 +1,20 @@
-// ============================================================
-// Anonymous — Component: FilterPanel
-// ============================================================
-
 import { useState } from 'react';
+import { Shield, Activity, SlidersHorizontal, History } from 'lucide-react';
 
-const RISK_FILTERS = ['all', 'critical', 'high', 'medium', 'low'];
-const STATUS_FILTERS = ['all', 'active', 'action_pending', 'resolved'];
+const RISK_FILTERS = [
+  { id: 'all',      label: 'All Levels' },
+  { id: 'critical', label: 'Critical' },
+  { id: 'high',     label: 'High' },
+  { id: 'medium',   label: 'Medium' },
+  { id: 'low',      label: 'Low' },
+];
+
+const STATUS_FILTERS = [
+  { id: 'all',            label: 'Total' },
+  { id: 'active',         label: 'Active' },
+  { id: 'action_pending', label: 'Pending' },
+  { id: 'resolved',       label: 'Secured' },
+];
 
 export default function FilterPanel({ onFilterChange }) {
   const [activeRisk, setActiveRisk] = useState('all');
@@ -13,51 +22,64 @@ export default function FilterPanel({ onFilterChange }) {
 
   function handleRisk(risk) {
     setActiveRisk(risk);
-    onFilterChange({
-      risk: risk === 'all' ? '' : risk,
-      status: activeStatus === 'all' ? '' : activeStatus,
-    });
+    onFilterChange({ risk: risk === 'all' ? '' : risk, status: activeStatus === 'all' ? '' : activeStatus });
   }
 
   function handleStatus(status) {
     setActiveStatus(status);
-    onFilterChange({
-      risk: activeRisk === 'all' ? '' : activeRisk,
-      status: status === 'all' ? '' : status,
-    });
+    onFilterChange({ risk: activeRisk === 'all' ? '' : activeRisk, status: status === 'all' ? '' : status });
   }
 
-  return (
-    <div className="filter-panel">
-      <div style={{ width: '100%', marginBottom: '8px' }}>
-        <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          Risk Level
-        </span>
-      </div>
-      {RISK_FILTERS.map((r) => (
-        <button
-          key={r}
-          className={`filter-chip ${activeRisk === r ? 'active' : ''}`}
-          onClick={() => handleRisk(r)}
-        >
-          {r === 'all' ? '🔍 All' : r === 'critical' ? '🔴 Critical' : r === 'high' ? '🟠 High' : r === 'medium' ? '🟡 Medium' : '🟢 Low'}
-        </button>
-      ))}
+  const chipStyle = (active) => ({
+    display: 'inline-flex', alignItems: 'center', gap: '6px',
+    padding: '5px 12px',
+    fontSize: '0.65rem', fontWeight: 700,
+    letterSpacing: '0.1em', textTransform: 'uppercase',
+    fontFamily: "'JetBrains Mono', monospace",
+    cursor: 'pointer',
+    background: active ? 'rgba(0,255,65,0.12)' : 'transparent',
+    color: active ? '#00ff41' : 'rgba(0,255,65,0.35)',
+    border: active ? '1px solid rgba(0,255,65,0.45)' : '1px solid rgba(0,255,65,0.12)',
+    transition: 'all 0.15s',
+  });
 
-      <div style={{ width: '100%', margin: '8px 0', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
-        <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          Status
+  return (
+    <div style={{
+      background: 'rgba(0,0,0,0.6)',
+      border: '1px solid rgba(0,255,65,0.2)',
+      padding: '16px 20px',
+      display: 'flex',
+      flexDirection: 'row',
+      gap: '24px',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      fontFamily: "'JetBrains Mono', monospace",
+    }}>
+      {/* Risk Level */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.6rem', color: 'rgba(0,255,65,0.4)', letterSpacing: '0.15em', textTransform: 'uppercase', marginRight: '4px' }}>
+          <Shield size={10} style={{ display: 'inline', marginRight: '4px' }} />LEVEL:
         </span>
+        {RISK_FILTERS.map((r) => (
+          <button key={r.id} style={chipStyle(activeRisk === r.id)} onClick={() => handleRisk(r.id)}>
+            {r.label}
+          </button>
+        ))}
       </div>
-      {STATUS_FILTERS.map((s) => (
-        <button
-          key={s}
-          className={`filter-chip ${activeStatus === s ? 'active' : ''}`}
-          onClick={() => handleStatus(s)}
-        >
-          {s === 'all' ? 'All' : s === 'action_pending' ? 'Pending' : s.charAt(0).toUpperCase() + s.slice(1)}
-        </button>
-      ))}
+
+      <div style={{ width: '1px', height: '24px', background: 'rgba(0,255,65,0.15)', flexShrink: 0 }} />
+
+      {/* Status */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.6rem', color: 'rgba(0,255,65,0.4)', letterSpacing: '0.15em', textTransform: 'uppercase', marginRight: '4px' }}>
+          <Activity size={10} style={{ display: 'inline', marginRight: '4px' }} />STATUS:
+        </span>
+        {STATUS_FILTERS.map((s) => (
+          <button key={s.id} style={chipStyle(activeStatus === s.id)} onClick={() => handleStatus(s.id)}>
+            {s.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

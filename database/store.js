@@ -82,6 +82,27 @@ function getScansByUserId(userId) {
 
 // ── Findings ─────────────────────────────────────────────────
 function addFinding(scanId, userId, finding) {
+  // Deduplicate: if a finding for this source already exists for this user,
+  // update it in-place rather than inserting a duplicate.
+  const existing = db.findings.find(
+    (f) => f.userId === userId && f.source === finding.source
+  );
+
+  if (existing) {
+    Object.assign(existing, {
+      scanId,                                       // update to latest scan
+      confidence: finding.confidence,
+      risk: finding.risk || calculateRisk(finding.confidence),
+      dataFound: finding.dataFound,
+      rawData: finding.rawData || {},
+      lastSeen: now(),
+      // Keep original firstSeen and status unless status is 'active'
+      status: existing.status === 'resolved' ? existing.status : 'active',
+    });
+    return existing;
+  }
+
+  // New finding — insert
   const entry = {
     id: id(),
     scanId,

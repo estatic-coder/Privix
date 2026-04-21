@@ -1,676 +1,372 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  ShieldAlert,
-  Network,
-  Search,
-  Zap,
-  Eye,
-  Activity,
-  ArrowRight,
-  ChevronRight,
-  Terminal,
-  Lock,
-  GitBranch,
-  Cpu,
-  Database,
-  BarChart3,
-  AlertTriangle,
-  Globe,
-  Code2,
-  Layers,
-  TrendingUp,
-  Clock,
-  Box,
-  Link2,
-  Hash,
-  Scan,
-  FileWarning,
-  Trash2,
-  Radio,
-} from "lucide-react";
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Terminal, Database, Server, Crosshair, ShieldAlert, Activity, Shield, Zap, Eye, Lock, Globe, AlertTriangle, Cpu, Wifi, RefreshCw } from 'lucide-react';
 
-import MatrixBackground from "../components/MatrixBackground";
+const mono = { fontFamily: "'JetBrains Mono', monospace" };
 
-// ═══════════════════════════════════════════════════════════════════════
-// Scroll-reveal hook — elements animate in when they enter the viewport
-// ═══════════════════════════════════════════════════════════════════════
-
-function useReveal(threshold = 0.15) {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
-      { threshold }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-
-  return [ref, visible];
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// Terminal typing animation
-// ═══════════════════════════════════════════════════════════════════════
-
-const TERMINAL_LINES = [
-  { text: "$ privix --init scan-engine", delay: 0 },
-  { text: "[OK] Connecting to data broker APIs...", delay: 1200, color: "text-green-400" },
-  { text: "[OK] Initializing deep web scrapers...", delay: 2400, color: "text-green-400" },
-  { text: "[>>] Cross-referencing email databases...", delay: 3600, color: "text-cyan-400" },
-  { text: "[!!] 3 instances found on DataBrokerX (Confidence: High)", delay: 4800, color: "text-amber-400" },
-  { text: "[!!] Password hash exposed in breach DB", delay: 6000, color: "text-red-400" },
-  { text: "[>>] Formatting deletion requests for dispatch...", delay: 7200, color: "text-cyan-400" },
-  { text: "[OK] Opt-out requests successfully queued", delay: 8400, color: "text-green-400" },
-  { text: "[OK] System ready — Background monitoring active", delay: 9600, color: "text-green-400" },
-  { text: "$ _", delay: 10800, blink: true },
+const BREACH_TICKER = [
+  "RockYou2024 — 10B plaintext passwords",
+  "AT&T — 73M SSNs on darknet forum",
+  "LinkedIn — 700M profiles exposed",
+  "23andMe — 6.9M genetic profiles",
+  "Ticketmaster — 560M records for sale",
+  "LastPass — vault keys compromised",
 ];
 
-function TerminalAnimation({ onComplete }) {
-  const [lines, setLines] = useState([]);
-  const timersRef = useRef([]);
-  const onCompleteRef = useRef(onComplete);
-  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+const MODULES = [
+  { tag: "DATA_CRAWLER.sys",  color: "#00ff41", icon: Database,   desc: "Scraping .onion domains & leak repos in real-time" },
+  { tag: "DMCA_STRIKE.exe",   color: "#00ffff", icon: Crosshair,  desc: "Automated takedown — 200+ broker targets" },
+  { tag: "OBFUSCATOR.dll",    color: "#00ff41", icon: Lock,       desc: "AES-256 local encryption — zero server retention" },
+  { tag: "THREAT_RADAR.sys",  color: "#ff003c", icon: ShieldAlert, desc: "0-day monitoring across tracked credentials" },
+  { tag: "ID_ENGINE.sys",     color: "#ffb86c", icon: Eye,        desc: "Cross-refs 400+ breach databases simultaneously" },
+  { tag: "VAULT.dll",         color: "#00ffff", icon: Server,     desc: "Encrypted local storage — PII never leaves device" },
+];
 
+const STATS = [
+  { label: "Credentials Leaked", value: "47B+",  color: "#ff003c" },
+  { label: "People Exposed",     value: "3.5B",  color: "#ffb86c" },
+  { label: "Brokers Targeted",   value: "200+",  color: "#00ffff" },
+  { label: "Detection Rate",     value: "99.1%", color: "#00ff41" },
+];
+
+const HELP_TEXT = [
+  "AVAILABLE COMMANDS:",
+  "  init       — Launch PRIVIX dashboard",
+  "  sysinfo    — Display loaded modules",
+  "  status     — Show system status",
+  "  clear      — Clear terminal output",
+  "",
+];
+
+const SYSINFO_TEXT = [
+  "PRIVIX v2.1.0 — ACTIVE MODULES:",
+  "  [✓] DATA_CRAWLER.sys   — RUNNING",
+  "  [✓] DMCA_STRIKE.exe    — RUNNING",
+  "  [✓] OBFUSCATOR.dll     — RUNNING",
+  "  [✓] THREAT_RADAR.sys   — RUNNING",
+  "  [✓] ID_ENGINE.sys      — RUNNING",
+  "  [✓] VAULT.dll          — RUNNING",
+  "",
+];
+
+const STATUS_TEXT = [
+  "SYSTEM STATUS:",
+  "  UPLINK        : SECURE [TLS 1.3]",
+  "  CRAWLERS      : 847 ACTIVE THREADS",
+  "  BREACH DB     : 47,000,000,000 RECORDS",
+  "  BROKERS       : 214 NODES MONITORED",
+  "  ENCRYPTION    : AES-256-GCM",
+  "  LOG POLICY    : ZERO RETENTION",
+  "",
+];
+
+export default function Landing() {
+  const navigate = useNavigate();
+  const [inputVal, setInputVal] = useState('');
+  const [history, setHistory] = useState([
+    "PRIVIX Security System [Version 2.1.0]",
+    "(c) 2026 PRIVIX. Ghost Protocol Active.",
+    "",
+    "Type 'help' for available commands.",
+    "Type 'init' to launch the dashboard.",
+    "",
+  ]);
+  const [isBooting, setIsBooting] = useState(false);
+  const [bootLogs, setBootLogs] = useState([]);
+  const [tickerIdx, setTickerIdx] = useState(0);
+  const [telemetry, setTelemetry] = useState([]);
+  const [breachCount, setBreachCount] = useState(47000000000);
+  const [time, setTime] = useState(new Date().toLocaleTimeString());
+  const [cpuLoad, setCpuLoad] = useState(42);
+  const [recentBreaches, setRecentBreaches] = useState([
+    { ts: '04:01:12', src: 'HaveIBeenPwned', type: 'EMAIL', sev: 'HIGH',     color: '#ffb86c' },
+    { ts: '04:03:44', src: 'DarkWebMarket',  type: 'SSN',   sev: 'CRITICAL', color: '#ff003c' },
+    { ts: '04:07:09', src: 'LeakForums',     type: 'PASS',  sev: 'HIGH',     color: '#ffb86c' },
+    { ts: '04:11:55', src: 'BreachDir',      type: 'CC',    sev: 'CRITICAL', color: '#ff003c' },
+    { ts: '04:15:33', src: 'DeHashed',       type: 'EMAIL', sev: 'MED',      color: '#00ffff' },
+    { ts: '04:22:08', src: 'Combolist',      type: 'PASS',  sev: 'HIGH',     color: '#ffb86c' },
+  ]);
+  const [threatLevels] = useState([
+    { label: 'DARKNET EXPOSURE',  pct: 78, color: '#ff003c' },
+    { label: 'BROKER COVERAGE',   pct: 94, color: '#00ff41' },
+    { label: 'CREDENTIAL RISK',   pct: 61, color: '#ffb86c' },
+    { label: 'IDENTITY SURFACE',  pct: 83, color: '#ff003c' },
+    { label: 'REMOVAL PROGRESS',  pct: 22, color: '#00ffff' },
+  ]);
+  const [threadCount, setThreadCount] = useState(847);
+
+  const inputRef = useRef(null);
+  const historyEndRef = useRef(null);
+  const telemetryRef = useRef(null);
+
+  useEffect(() => { historyEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [history]);
+  useEffect(() => { if (telemetryRef.current) { telemetryRef.current.scrollTop = telemetryRef.current.scrollHeight; } }, [telemetry]);
+
+  // Clock
   useEffect(() => {
-    const timers = timersRef.current;
+    const t = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
-    TERMINAL_LINES.forEach((line, lineIdx) => {
-      const t = setTimeout(() => {
-        setLines((prev) => [...prev, { ...line, typed: line.blink ? line.text : "" }]);
+  // Breach ticker
+  useEffect(() => {
+    const t = setInterval(() => setTickerIdx(p => (p + 1) % BREACH_TICKER.length), 3500);
+    return () => clearInterval(t);
+  }, []);
 
-        if (line.blink) {
-          onCompleteRef.current?.();
-          return;
+  // Telemetry stream
+  useEffect(() => {
+    if (isBooting) return;
+    const t = setInterval(() => {
+      const ip = Array.from({ length: 4 }, () => Math.floor(Math.random() * 255)).join('.');
+      const port = Math.floor(Math.random() * 65535);
+      const statuses = ['BLOCK', 'SECURE', 'WARN', 'SCAN', 'OK'];
+      const s = statuses[Math.floor(Math.random() * statuses.length)];
+      const sColor = s === 'BLOCK' ? '#ff003c' : s === 'WARN' ? '#ffb86c' : '#00ff41';
+      setTelemetry(prev => [...prev, { ip, port, status: s, color: sColor, ts: new Date().toLocaleTimeString() }].slice(-30));
+      setBreachCount(p => p + Math.floor(Math.random() * 300 + 100));
+      setCpuLoad(Math.floor(Math.random() * 30 + 35));
+      setThreadCount(p => p + Math.floor(Math.random() * 4 - 2));
+      // Add a new breach event
+      const SRCS = ['HaveIBeenPwned','DarkWebMarket','LeakForums','BreachDir','DeHashed','Combolist','0day.today','PasteBin'];
+      const TYPES = ['EMAIL','SSN','PASS','CC','DOB','ADDR','PHONE'];
+      const SEVS = [['CRITICAL','#ff003c'],['HIGH','#ffb86c'],['MED','#00ffff']];
+      const [sev, sc] = SEVS[Math.floor(Math.random() * SEVS.length)];
+      setRecentBreaches(prev => [{
+        ts: new Date().toLocaleTimeString(),
+        src: SRCS[Math.floor(Math.random()*SRCS.length)],
+        type: TYPES[Math.floor(Math.random()*TYPES.length)],
+        sev, color: sc
+      }, ...prev].slice(0, 12));
+    }, 900);
+    return () => clearInterval(t);
+  }, [isBooting]);
+
+  const handleCommand = (e) => {
+    e.preventDefault();
+    const cmd = inputVal.trim().toLowerCase();
+    setHistory(prev => [...prev, `root@privix:~$ ${inputVal}`]);
+    setInputVal('');
+    if (!cmd) return;
+
+    if (cmd === 'init') {
+      setIsBooting(true);
+      
+      // Fast scrolling hex generator
+      const genHex = () => Array.from({length: 12}, () => Math.floor(Math.random()*16).toString(16).toUpperCase()).join(' ');
+      
+      let iters = 0;
+      const t = setInterval(() => {
+        iters++;
+        if (iters < 40) {
+          setBootLogs(p => [...p, `[${(Math.random()*9999).toFixed(4)}] ${genHex()} ${genHex()}`].slice(-35));
+        } else if (iters === 40) {
+          setBootLogs(p => [...p, "", ">> BYPASSING MAINFRAME SECURITY...", ">> OVERRIDING ENCRYPTION PROTOCOLS...", ">> ROOT ACCESS SECURED."]);
+        } else if (iters === 50) {
+          clearInterval(t);
+          setTimeout(() => navigate('/dashboard'), 1500);
         }
+      }, 40);
 
-        const typeChar = (ci) => {
-          if (ci >= line.text.length) return;
-          const id = setTimeout(() => {
-            setLines((prev) => {
-              const copy = [...prev];
-              if (copy[lineIdx]) {
-                copy[lineIdx] = { ...copy[lineIdx], typed: line.text.slice(0, ci + 1) };
-              }
-              return copy;
-            });
-            typeChar(ci + 1);
-          }, 14 + Math.random() * 18);
-          timers.push(id);
-        };
-        typeChar(0);
-      }, line.delay);
+      return;
+    }
+    if (cmd === 'help')    { setHistory(p => [...p, ...HELP_TEXT]); return; }
+    if (cmd === 'sysinfo') { setHistory(p => [...p, ...SYSINFO_TEXT]); return; }
+    if (cmd === 'status')  { setHistory(p => [...p, ...STATUS_TEXT]); return; }
+    if (cmd === 'clear')   { setHistory([]); return; }
+    setHistory(p => [...p, `bash: ${cmd}: command not found`, ""]);
+  };
 
-      timers.push(t);
-    });
-  }, []);
-
-  return (
-    <div className="landing-terminal">
-      <div className="landing-terminal-header">
-        <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
-          <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
-          <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
+  if (isBooting) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column', padding: '20px', overflow: 'hidden', ...mono }}>
+        {/* Fast scrolling hex stream */}
+        <div style={{ flex: 1, color: 'rgba(0,255,65,0.4)', fontSize: '0.65rem', lineHeight: 1.2, whiteSpace: 'pre-wrap', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          {bootLogs.map((log, i) => <div key={i} style={{ color: log.startsWith('>>') ? '#00ff41' : 'inherit', fontWeight: log.startsWith('>>') ? 900 : 400 }}>{log}</div>)}
         </div>
-        <span className="text-[10px] text-zinc-500 font-mono">privix@core:~</span>
-      </div>
-      <div className="landing-terminal-body">
-        {lines.map((line, i) => (
-          <div
-            key={i}
-            className={`font-mono text-xs leading-relaxed ${line.color || "text-zinc-400"} ${
-              line.blink ? "landing-blink" : ""
-            }`}
-          >
-            {line.blink ? line.text : line.typed}
-            {i === lines.length - 1 && !line.blink && (
-              <span className="landing-cursor">▎</span>
-            )}
+        
+        {/* Cinematic Overlay */}
+        {bootLogs.some(l => l.includes("ROOT ACCESS SECURED")) && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)' }}>
+            <div style={{ color: '#00ff41', fontSize: '3rem', fontWeight: 900, letterSpacing: '0.2em', textShadow: '0 0 40px #00ff41', animation: 'pulse 1s infinite', textAlign: 'center' }}>
+              ACCESS GRANTED
+              <div style={{ fontSize: '1rem', color: 'rgba(0,255,65,0.6)', marginTop: '20px', letterSpacing: '0.4em', fontWeight: 400 }}>GHOST PROTOCOL INITIATED</div>
+            </div>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// Live log feed (decorative)
-// ═══════════════════════════════════════════════════════════════════════
-
-const LOG_ENTRIES = [
-  { ts: "14:32:07.213", msg: "Scanning broker directory...", level: "INFO" },
-  { ts: "14:32:07.415", msg: "Record match found — name exposed", level: "ALERT" },
-  { ts: "14:32:08.001", msg: "Initiating deletion wrapper script", level: "WARN" },
-  { ts: "14:32:08.192", msg: "Request dispatched to central broker", level: "INFO" },
-  { ts: "14:32:08.534", msg: "Verifying confirmation emails...", level: "INFO" },
-  { ts: "14:32:09.117", msg: "Hash matched against known breaches", level: "ALERT" },
-  { ts: "14:32:09.302", msg: "Generating security alert notification", level: "WARN" },
-  { ts: "14:32:09.788", msg: "Adding record to suppression list", level: "INFO" },
-  { ts: "14:32:10.044", msg: "Awaiting manual deletion confirmation", level: "WARN" },
-  { ts: "14:32:10.331", msg: "Resolved: Entry successfully purged", level: "INFO" },
-];
-
-function LiveLogFeed() {
-  const [entries, setEntries] = useState([]);
-
-  useEffect(() => {
-    let idx = 0;
-    const interval = setInterval(() => {
-      setEntries((prev) => {
-        const next = [...prev, LOG_ENTRIES[idx % LOG_ENTRIES.length]];
-        if (next.length > 6) next.shift();
-        return next;
-      });
-      idx++;
-    }, 1800);
-    return () => clearInterval(interval);
-  }, []);
-
-  const levelColor = (l) =>
-    l === "ALERT" ? "text-red-400" : l === "WARN" ? "text-amber-400" : "text-zinc-500";
-
-  return (
-    <div className="landing-log-feed">
-      <div className="landing-log-header">
-        <Activity size={12} className="text-green-400" />
-        <span>LIVE ACTIVITY FEED</span>
-        <span className="landing-log-dot" />
-      </div>
-      <div className="landing-log-body">
-        {entries.map((e, i) => (
-          <div key={i} className="landing-log-entry">
-            <span className="text-zinc-600">{e.ts}</span>
-            <span className={`font-semibold ${levelColor(e.level)}`}>[{e.level}]</span>
-            <span className="text-zinc-400">{e.msg}</span>
-          </div>
-        ))}
-        {entries.length === 0 && (
-          <div className="text-zinc-600 text-xs font-mono">Awaiting data stream...</div>
         )}
       </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// Animated counter
-// ═══════════════════════════════════════════════════════════════════════
-
-function AnimatedCounter({ target, duration = 2000, suffix = "" }) {
-  const [value, setValue] = useState(0);
-  const ref = useRef(null);
-  const [started, setStarted] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !started) setStarted(true);
-      },
-      { threshold: 0.3 }
     );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [started]);
-
-  useEffect(() => {
-    if (!started) return;
-    const start = performance.now();
-    const tick = () => {
-      const elapsed = performance.now() - start;
-      const progress = Math.min(1, elapsed / duration);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(eased * target));
-      if (progress < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }, [started, target, duration]);
+  }
 
   return (
-    <span ref={ref}>
-      {value.toLocaleString()}
-      {suffix}
-    </span>
-  );
-}
+    <div style={{ height: '100vh', width: '100vw', overflow: 'hidden', background: '#000', color: '#00ff41', display: 'flex', flexDirection: 'column', ...mono }}>
 
-// ═══════════════════════════════════════════════════════════════════════
-// Feature card
-// ═══════════════════════════════════════════════════════════════════════
 
-function FeatureCard({ icon: Icon, title, description, accent, delay = 0 }) {
-  const [ref, visible] = useReveal(0.15);
 
-  return (
-    <div
-      ref={ref}
-      className="landing-feature-card group"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(30px)",
-        transition: `opacity 0.6s ease ${delay}ms, transform 0.6s ease ${delay}ms`,
-      }}
-    >
-      <div className={`landing-feature-icon ${accent}`}>
-        <Icon size={22} />
-      </div>
-      <h3 className="text-sm font-bold text-zinc-100 mt-4 mb-2 tracking-wide uppercase">
-        {title}
-      </h3>
-      <p className="text-xs text-zinc-500 leading-relaxed">{description}</p>
-      <div className={`landing-feature-glow ${accent}`} />
-    </div>
-  );
-}
+      {/* ── Main 3-Column Layout ── */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '240px 1fr 280px', overflow: 'hidden' }}>
 
-// ═══════════════════════════════════════════════════════════════════════
-// Demo section — terminal + live feed
-// ═══════════════════════════════════════════════════════════════════════
+        {/* ── LEFT PANEL ── */}
+        <div style={{ borderRight: '1px solid rgba(0,255,65,0.2)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-function DemoSection() {
-  const [terminalDone, setTerminalDone] = useState(false);
-  const handleComplete = useCallback(() => setTerminalDone(true), []);
-  const [ref, visible] = useReveal(0.1);
-
-  return (
-    <section
-      id="demo"
-      className="landing-section"
-      ref={ref}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(40px)",
-        transition: "opacity 0.7s ease, transform 0.7s ease",
-      }}
-    >
-      <div className="landing-section-inner">
-        <div className="text-center mb-12">
-          <span className="landing-section-tag">
-            <Cpu size={12} /> INTERACTIVE CONSOLE
-          </span>
-          <h2 className="landing-section-title">See It In Action</h2>
-          <p className="landing-section-sub">
-            Watch our exposure engine scan, detect, and queue deletion requests in real time.
-          </p>
-        </div>
-
-        {/* Terminal + side panel grid */}
-        <div className="landing-demo-grid">
-          <div className="landing-demo-main">
-            <TerminalAnimation onComplete={handleComplete} />
+          {/* Telemetry header */}
+          <div style={{ padding: '8px 12px', borderBottom: '1px solid rgba(0,255,65,0.12)', fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(0,255,65,0.5)', flexShrink: 0 }}>
+            ◉ NETWORK TELEMETRY
           </div>
 
-          <div className="landing-demo-side">
-            <LiveLogFeed />
-            <div className="landing-mini-panel">
-              <div className="landing-mini-panel-header">
-                <BarChart3 size={12} className="text-red-500" />
-                <span>SCAN METRICS</span>
+          {/* Live telemetry feed */}
+          <div ref={telemetryRef} style={{ flex: 1, overflowY: 'auto', padding: '8px', fontSize: '0.55rem', color: 'rgba(0,255,65,0.7)', lineHeight: 1.7 }} className="terminal-scroll">
+            {telemetry.map((t, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '4px' }}>
+                <span style={{ color: 'rgba(0,255,65,0.35)', flexShrink: 0 }}>{t.ts}</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{t.ip}:{t.port}</span>
+                <span style={{ color: t.color, flexShrink: 0, fontWeight: 700 }}>{t.status}</span>
               </div>
-              <div className="landing-mini-panel-body">
-                <div className="landing-mini-stat">
-                  <span className="text-zinc-500">Brokers Scanned</span>
-                  <span className="text-red-500 font-bold">
-                    <AnimatedCounter target={1847} />
-                  </span>
-                </div>
-                <div className="landing-mini-stat">
-                  <span className="text-zinc-500">Records Checked</span>
-                  <span className="text-red-500 font-bold">
-                    <AnimatedCounter target={3214} />
-                  </span>
-                </div>
-                <div className="landing-mini-stat">
-                  <span className="text-zinc-500">Exposures Found</span>
-                  <span className="text-red-400 font-bold">
-                    <AnimatedCounter target={23} />
-                  </span>
-                </div>
-                <div className="landing-mini-stat">
-                  <span className="text-zinc-500">Deletions Queued</span>
-                  <span className="text-cyan-400 font-bold">
-                    <AnimatedCounter target={12} />
-                  </span>
-                </div>
+            ))}
+          </div>
+
+          {/* Live stats */}
+          <div style={{ borderTop: '1px solid rgba(0,255,65,0.15)', padding: '8px', flexShrink: 0 }}>
+            <div style={{ fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(0,255,65,0.4)', marginBottom: '8px' }}>LIVE INTEL</div>
+            {STATS.map(s => (
+              <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px', gap: '4px' }}>
+                <span style={{ fontSize: '0.55rem', color: 'rgba(0,255,65,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.label}</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 900, color: s.color, flexShrink: 0 }}>{s.value}</span>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// Main Landing Page
-// ═══════════════════════════════════════════════════════════════════════
-
-export default function LandingPage() {
-  const navigate = useNavigate();
-  const [scrollY, setScrollY] = useState(0);
-
-  // Reveal hooks for each section
-  const [heroRef, heroVisible] = useReveal(0.1);
-  const [pipelineRef, pipelineVisible] = useReveal(0.1);
-  const [techRef, techVisible] = useReveal(0.1);
-
-  useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  return (
-    <div className="landing-root">
-      {/* ════════════ Full-screen matrix background ════════════ */}
-      <div className="cyber-network-bg" aria-hidden="true">
-        <MatrixBackground />
-      </div>
-
-      {/* ════════════════════ NAV ════════════════════ */}
-      <nav
-        className={`landing-nav ${scrollY > 50 ? "landing-nav-scrolled" : ""}`}
-      >
-        <div className="landing-nav-inner">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-800/80 shadow-lg shadow-red-900/20">
-              <ShieldAlert size={16} className="text-white" />
-            </div>
-            <div>
-              <span className="text-sm font-bold tracking-tight text-white font-mono">
-                PRIVIX
-              </span>
-              <span className="hidden sm:inline text-[10px] text-zinc-500 ml-3 font-mono opacity-60">
-                v2.0 // DATA EXPOSURE MONITORING
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <a href="#features" className="hidden sm:inline text-xs text-zinc-400 hover:text-white transition-colors font-mono">
-              FEATURES
-            </a>
-            <a href="#demo" className="hidden sm:inline text-xs text-zinc-400 hover:text-white transition-colors font-mono">
-              DEMO
-            </a>
-            <a href="#pipeline" className="hidden sm:inline text-xs text-zinc-400 hover:text-white transition-colors font-mono">
-              PIPELINE
-            </a>
-            <a href="#tech" className="hidden sm:inline text-xs text-zinc-400 hover:text-white transition-colors font-mono">
-              TECH
-            </a>
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="landing-btn-ghost"
-            >
-              Log In
-            </button>
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="landing-btn-primary"
-            >
-              Get Started <ArrowRight size={14} />
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* ════════════════════ HERO ════════════════════ */}
-      <section className="landing-hero">
-        <div
-          ref={heroRef}
-          className="relative z-10 landing-hero-content"
-          style={{
-            opacity: heroVisible ? 1 : 0,
-            transform: heroVisible ? "translateY(0)" : "translateY(40px)",
-            transition: "opacity 0.8s ease, transform 0.8s ease",
-          }}
-        >
-          {/* Status badge */}
-          <div className="landing-status-badge">
-            <span className="landing-status-dot" />
-            <span className="font-mono text-[11px] text-zinc-400">
-              SYSTEM ONLINE — SCAN ENGINE ACTIVE
-            </span>
+            ))}
           </div>
 
-          {/* Headline */}
-          <h1 className="landing-hero-title">
-            <span className="landing-glitch whitespace-nowrap" data-text="Personal Data Exposure">
-              Personal Data Exposure
-            </span>
-            <br />
-            <span className="landing-hero-accent">
-              Monitoring System
-            </span>
-          </h1>
-
-          <p className="landing-hero-sub">
-            Monitor the dark web. Detect rogue data brokers.
-            <br className="hidden sm:block" />
-            Protect your PII in real time with automated exposure tracking.
-          </p>
-
-          {/* CTA */}
-          <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="landing-btn-hero"
-            >
-              <Terminal size={16} />
-              Launch Console
-              <ChevronRight size={16} className="ml-1" />
-            </button>
-            <a
-              href="#demo"
-              className="landing-btn-outline"
-            >
-              <Eye size={16} />
-              Live Preview
-            </a>
-          </div>
-
-          {/* Hero stats */}
-          <div className="landing-hero-stats">
-            <div className="landing-hero-stat">
-              <span className="landing-hero-stat-value">
-                <AnimatedCounter target={5} suffix="+" />
-              </span>
-              <span className="landing-hero-stat-label">Real-time Scanners</span>
-            </div>
-            <div className="landing-hero-stat-divider" />
-            <div className="landing-hero-stat">
-              <span className="landing-hero-stat-value">
-                <AnimatedCounter target={45} suffix="+" />
-              </span>
-              <span className="landing-hero-stat-label">Brokers Monitored</span>
-            </div>
-            <div className="landing-hero-stat-divider" />
-            <div className="landing-hero-stat">
-              <span className="landing-hero-stat-value">
-                <AnimatedCounter target={100} suffix="/100" />
-              </span>
-              <span className="landing-hero-stat-label">Threat Coverage</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════ INTERACTIVE DEMO ════════════════════ */}
-      <DemoSection />
-
-      {/* ════════════════════ FEATURES ════════════════════ */}
-      <section id="features" className="landing-section landing-section-alt">
-        <div className="landing-section-inner">
-          <div className="text-center mb-12">
-            <span className="landing-section-tag">
-              <Zap size={12} /> CAPABILITIES
-            </span>
-            <h2 className="landing-section-title">
-              Built for Exposure Forensics
-            </h2>
-            <p className="landing-section-sub">
-              Every tool you need to scan, analyze, and eliminate your
-              personal data from vulnerable endpoints across the web.
-            </p>
-          </div>
-
-          <div className="landing-features-grid">
-            <FeatureCard
-              icon={Scan}
-              title="Deep Web Scraping"
-              description="Continuous scanning of dark web forums and data broker marketplaces for stolen credentials and exposed session tokens."
-              accent="text-red-500"
-              delay={0}
-            />
-            <FeatureCard
-              icon={ShieldAlert}
-              title="Automated Opt-Outs"
-              description="Auto-generate and dispatch CCPA and GDPR compliant data deletion requests directly to registered brokers."
-              accent="text-red-400"
-              delay={100}
-            />
-            <FeatureCard
-              icon={Search}
-              title="Breach Cross-Check"
-              description="Cross-reference your email and password hashes against the largest compiled databases of historical data breaches."
-              accent="text-amber-400"
-              delay={200}
-            />
-            <FeatureCard
-              icon={FileWarning}
-              title="Exposure Risk Index"
-              description="Live composite score rating your total PII exposure danger based on volume and severity of leaked details."
-              accent="text-cyan-400"
-              delay={300}
-            />
-            <FeatureCard
-              icon={Trash2}
-              title="Automated Deletion"
-              description="One-click deletion request pipelines that track confirmation status and re-send when brokers fail to comply."
-              accent="text-green-400"
-              delay={400}
-            />
-            <FeatureCard
-              icon={Radio}
-              title="Real-time Alerts"
-              description="Instant push notifications when new exposures are detected, with severity-rated alerts and actionable next steps."
-              accent="text-purple-400"
-              delay={500}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════ HOW IT WORKS ════════════════════ */}
-      <section
-        id="pipeline"
-        className="landing-section"
-        ref={pipelineRef}
-        style={{
-          opacity: pipelineVisible ? 1 : 0,
-          transform: pipelineVisible ? "translateY(0)" : "translateY(40px)",
-          transition: "opacity 0.7s ease 0.1s, transform 0.7s ease 0.1s",
-        }}
-      >
-        <div className="landing-section-inner">
-          <div className="text-center mb-12">
-            <span className="landing-section-tag">
-              <Globe size={12} /> PIPELINE
-            </span>
-            <h2 className="landing-section-title">
-              From Raw Data to Actionable Intelligence
-            </h2>
-          </div>
-
-          <div className="landing-pipeline">
-            {[
-              { step: "01", icon: Database, title: "INGEST", desc: "Input names, emails, or phone numbers. Our engine encrypts and hashes targets before querying external networks." },
-              { step: "02", icon: Search, title: "SCAN", desc: "Deep web scrapers index breach databases and thousands of data brokers, mapping your PII against exposed data vectors." },
-              { step: "03", icon: Cpu, title: "ANALYZE", desc: "The scoring engine compiles risk levels and auto-generates CCPA/GDPR opt-out payloads for each exposed broker." },
-              { step: "04", icon: Eye, title: "TRACK", desc: "Live-track the delivery and confirmation status of automated data deletion requests in a secure dashboard." },
-            ].map((item) => (
-              <div key={item.step} className="landing-pipeline-step">
-                <div className="landing-pipeline-num">{item.step}</div>
-                <item.icon size={20} className="text-red-500 mb-3" />
-                <h3 className="text-xs font-bold text-zinc-200 tracking-widest mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-[11px] text-zinc-500 leading-relaxed">
-                  {item.desc}
-                </p>
+          {/* Network nodes */}
+          <div style={{ borderTop: '1px solid rgba(0,255,65,0.12)', padding: '8px', flexShrink: 0 }}>
+            <div style={{ fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(0,255,65,0.4)', marginBottom: '8px' }}>NETWORK NODES</div>
+            {[['GLOBAL_NET', '#00ff41'], ['DARK_WEB', '#00ff41'], ['RELAY_7G', '#00ff41'], ['BROKER_NET', '#00ffff'], ['HIBP_API', '#ffb86c']].map(([name, c]) => (
+              <div key={name} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.6rem' }}>
+                <span style={{ color: 'rgba(0,255,65,0.5)' }}>{name}</span>
+                <span style={{ color: c, fontWeight: 700 }}>OK</span>
               </div>
             ))}
           </div>
         </div>
-      </section>
 
-      {/* ════════════════════ TECH STACK ════════════════════ */}
-      <section
-        id="tech"
-        className="landing-section landing-section-alt"
-        ref={techRef}
-        style={{
-          opacity: techVisible ? 1 : 0,
-          transform: techVisible ? "translateY(0)" : "translateY(40px)",
-          transition: "opacity 0.7s ease 0.1s, transform 0.7s ease 0.1s",
-        }}
-      >
-        <div className="landing-section-inner">
-          <div className="text-center mb-12">
-            <span className="landing-section-tag">
-              <Layers size={12} /> TECHNOLOGY STACK
-            </span>
-            <h2 className="landing-section-title">Built on Modern Infrastructure</h2>
-            <p className="landing-section-sub">
-              Purpose-selected tools forming a cohesive data exposure platform — from continuous broker scanning to proactive credential suppression.
-            </p>
+        {/* ── CENTER PANEL ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+          {/* ASCII Logo */}
+          <div style={{ flexShrink: 0, borderBottom: '1px solid rgba(0,255,65,0.12)', background: 'rgba(0,255,65,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 8px' }}>
+            <pre style={{ fontSize: '14px', lineHeight: 1.15, color: '#00ff41', textShadow: '0 0 18px rgba(0,255,65,0.7)', margin: 0, textAlign: 'center', letterSpacing: '0.05em' }}>{`
+██████╗ ██████╗ ██╗██╗   ██╗██╗██╗  ██╗
+██╔══██╗██╔══██╗██║██║   ██║██║╚██╗██╔╝
+██████╔╝██████╔╝██║██║   ██║██║ ╚███╔╝ 
+██╔═══╝ ██╔══██╗██║╚██╗ ██╔╝██║ ██╔██╗ 
+██║     ██║  ██║██║ ╚████╔╝ ██║██╔╝ ██╗
+╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝  ╚═╝╚═╝  ╚═╝`}</pre>
           </div>
-          <div className="landing-tech-grid">
-            {[
-              { name: "React + Vite", category: "Frontend", desc: "High-performance SPA with hot-reload development, component-level code splitting, and optimized production builds via Rollup.", color: "text-blue-400", bg: "bg-blue-400/10", badge: "port 5173" },
-              { name: "Node.js + Express", category: "Backend API", desc: "RESTful API server handling scan orchestration, queue management, and user session auth with JWT middleware on all protected routes.", color: "text-green-400", bg: "bg-green-400/10", badge: "port 3001" },
-              { name: "MongoDB", category: "Database", desc: "Document-based persistence for user profiles, scan history, exposure records, and deletion request tracking with indexed queries.", color: "text-emerald-400", bg: "bg-emerald-400/10", badge: "Atlas cloud" },
-              { name: "Puppeteer", category: "Web Scraping", desc: "Headless browser automation for navigating data broker opt-out forms, handling CAPTCHAs, and submitting deletion requests programmatically.", color: "text-amber-400", bg: "bg-amber-400/10", badge: "headless Chrome" },
-              { name: "Bull + Redis", category: "Job Queue", desc: "Distributed task queue for parallel broker scanning with automatic retries, rate-limit backoff, and real-time progress tracking.", color: "text-red-500", bg: "bg-red-500/10", badge: "async workers" },
-              { name: "JWT + bcrypt", category: "Auth & Security", desc: "Role-based access control with 24-hour expiring tokens. Passwords hashed with bcrypt. All PII encrypted at rest via AES-256.", color: "text-pink-400", bg: "bg-pink-400/10", badge: "AES-256" },
-              { name: "CCPA / GDPR Engine", category: "Compliance", desc: "Auto-generates jurisdiction-specific data deletion requests with legal templates, tracks broker response deadlines, and escalates non-compliance.", color: "text-cyan-400", bg: "bg-cyan-400/10", badge: "auto-comply" },
-              { name: "Tailwind CSS", category: "Styling", desc: "Utility-first CSS framework enabling rapid UI development with a custom dark theme, responsive breakpoints, and zero runtime overhead.", color: "text-purple-400", bg: "bg-purple-400/10", badge: "v4.0" },
-            ].map((tech) => (
-              <div key={tech.name} className="landing-tech-card">
-                <span className={`landing-tech-badge ${tech.bg} ${tech.color}`}>{tech.category}</span>
-                <h3 className={`text-sm font-bold mt-3 mb-1.5 ${tech.color} font-mono`}>{tech.name}</h3>
-                <p className="text-[11px] text-zinc-500 leading-relaxed mb-3">{tech.desc}</p>
-                <code className="text-[10px] text-zinc-600 font-mono">{tech.badge}</code>
+
+          {/* Terminal history */}
+          <div style={{ flex: 1, padding: '12px 20px 0', overflowY: 'auto', fontSize: '0.78rem', lineHeight: 1.8, color: '#00ff41' }} className="terminal-scroll">
+            {history.map((line, i) => <div key={i} style={{ whiteSpace: 'pre-wrap', opacity: i < history.length - 3 ? 0.6 : 1 }}>{line || '\u00A0'}</div>)}
+            <div ref={historyEndRef} />
+          </div>
+
+          {/* Live Breach Intel Feed */}
+          <div style={{ flexShrink: 0, borderTop: '1px solid rgba(0,255,65,0.12)', background: 'rgba(0,0,0,0.6)' }}>
+            <div style={{ padding: '6px 20px', borderBottom: '1px solid rgba(0,255,65,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(0,255,65,0.4)' }}>◉ LIVE BREACH INTEL</span>
+              <span style={{ fontSize: '0.55rem', color: '#ff003c', letterSpacing: '0.08em' }}>● STREAMING</span>
+            </div>
+            <div style={{ maxHeight: '160px', overflowY: 'auto' }} className="terminal-scroll">
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.6rem' }}>
+                <thead>
+                  <tr style={{ color: 'rgba(0,255,65,0.3)' }}>
+                    {['TIME','SOURCE','TYPE','SEVERITY'].map(h => (
+                      <td key={h} style={{ padding: '4px 20px 4px', letterSpacing: '0.1em' }}>{h}</td>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentBreaches.map((b, i) => (
+                    <tr key={i} style={{ borderTop: '1px solid rgba(0,255,65,0.06)', opacity: i === 0 ? 1 : 0.65 }}>
+                      <td style={{ padding: '5px 20px', color: 'rgba(0,255,65,0.35)', whiteSpace: 'nowrap' }}>{b.ts}</td>
+                      <td style={{ padding: '5px 20px', color: '#00ff41', whiteSpace: 'nowrap' }}>{b.src}</td>
+                      <td style={{ padding: '5px 20px', color: 'rgba(0,255,65,0.6)', whiteSpace: 'nowrap' }}>{b.type}</td>
+                      <td style={{ padding: '5px 20px', color: b.color, fontWeight: 700, whiteSpace: 'nowrap' }}>{b.sev}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Input prompt */}
+          <form onSubmit={handleCommand} style={{ flexShrink: 0, padding: '12px 20px', borderTop: '1px solid rgba(0,255,65,0.2)', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(0,255,65,0.03)' }}>
+            <span style={{ fontWeight: 700, whiteSpace: 'nowrap', fontSize: '0.8rem' }}>root@privix:~$</span>
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputVal}
+              onChange={e => setInputVal(e.target.value)}
+              autoFocus autoComplete="off" spellCheck="false"
+              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#00ff41', fontSize: '0.8rem', caretColor: '#00ff41', ...mono }}
+            />
+          </form>
+
+        </div>
+
+        {/* ── RIGHT PANEL ── */}
+        <div style={{ borderLeft: '1px solid rgba(0,255,65,0.2)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+          {/* Modules header */}
+          <div style={{ padding: '8px 12px', borderBottom: '1px solid rgba(0,255,65,0.12)', fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(0,255,65,0.5)', flexShrink: 0 }}>
+            ◉ LOADED MODULES [{MODULES.length}/6]
+          </div>
+
+          {/* Module list */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }} className="terminal-scroll">
+            {MODULES.map(m => (
+              <div key={m.tag} style={{ border: '1px solid rgba(0,255,65,0.12)', padding: '10px', marginBottom: '6px', background: 'rgba(0,0,0,0.5)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.6rem', fontWeight: 700, color: m.color, marginBottom: '4px' }}>
+                  <m.icon size={10} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.tag}</span>
+                </div>
+                <div style={{ fontSize: '0.58rem', color: 'rgba(0,255,65,0.4)', lineHeight: 1.5 }}>{m.desc}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '5px', fontSize: '0.55rem', color: '#00ff41' }}>
+                  <span style={{ width: '5px', height: '5px', background: '#00ff41', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+                  RUNNING
+                </div>
               </div>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* ════════════════════ FOOTER ════════════════════ */}
-      <footer className="relative z-10 py-16 border-t border-red-900/30 bg-black/90 text-center">
-        <div className="flex items-center justify-center gap-2 mb-4 opacity-60">
-          <ShieldAlert size={18} className="text-red-500" />
-          <span className="font-mono text-lg font-bold text-red-500">PRIVIX</span>
+          {/* Threat Level Matrix */}
+          <div style={{ borderTop: '1px solid rgba(0,255,65,0.15)', padding: '10px 12px', flexShrink: 0, background: 'rgba(0,0,0,0.5)' }}>
+            <div style={{ fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(0,255,65,0.4)', marginBottom: '10px' }}>◉ THREAT LEVEL MATRIX</div>
+            {threatLevels.map(t => (
+              <div key={t.label} style={{ marginBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                  <span style={{ fontSize: '0.55rem', color: 'rgba(0,255,65,0.45)', letterSpacing: '0.05em' }}>{t.label}</span>
+                  <span style={{ fontSize: '0.55rem', fontWeight: 700, color: t.color }}>{t.pct}%</span>
+                </div>
+                <div style={{ height: '3px', background: 'rgba(0,255,65,0.1)', width: '100%' }}>
+                  <div style={{ height: '100%', width: `${t.pct}%`, background: t.color, boxShadow: `0 0 6px ${t.color}` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Live breach counter */}
+          <div style={{ borderTop: '1px solid rgba(0,255,65,0.15)', padding: '10px 12px', flexShrink: 0, background: 'rgba(255,0,60,0.04)' }}>
+            <div style={{ fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,0,60,0.5)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <RefreshCw size={9} /> LIVE BREACH COUNTER
+            </div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#ff003c', letterSpacing: '-0.03em' }}>
+              {breachCount.toLocaleString()}
+            </div>
+            <div style={{ fontSize: '0.55rem', color: 'rgba(255,0,60,0.4)', marginTop: '2px' }}>credentials in the wild</div>
+          </div>
+
+
         </div>
-        <p className="text-xs text-zinc-600 font-mono tracking-widest uppercase mb-6">
-          SECURE PERSONAL DATA EXPOSURE MONITORING
-        </p>
-        <div className="flex items-center justify-center gap-6">
-          <a href="#features" className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors font-mono uppercase">Features</a>
-          <a href="#demo" className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors font-mono uppercase">Demo</a>
-          <a href="#pipeline" className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors font-mono uppercase">Pipeline</a>
-          <a href="#tech" className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors font-mono uppercase">Tech</a>
-        </div>
-        <p className="text-[10px] text-zinc-700 font-mono mt-6">
-          © 2026 Privix. All rights reserved.
-        </p>
-      </footer>
+      </div>
     </div>
   );
 }

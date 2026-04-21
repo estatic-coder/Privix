@@ -1,68 +1,78 @@
-// ============================================================
-// Anonymous — Component: Navbar
-// ============================================================
-
 import { NavLink } from 'react-router-dom';
-import { ShieldAlert } from 'lucide-react';
+import { Terminal, LayoutDashboard, Settings, Activity } from 'lucide-react';
 
 export default function Navbar({ alertCount = 0 }) {
   return (
-    <nav className="navbar">
-      <NavLink to="/" className="navbar-brand">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-800/80 shadow-lg shadow-red-900/20">
-            <ShieldAlert size={16} className="text-white" />
-          </div>
-          <div>
-            <span className="text-xl font-bold tracking-tight text-white font-mono" style={{ textShadow: '0 0 8px rgba(255, 0, 60, 0.6)', color: 'var(--accent-primary)' }}>
-              PRIVIX
-            </span>
-          </div>
-        </div>
+    <nav style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '0 24px', height: '48px',
+      background: 'rgba(0,0,0,0.95)',
+      borderBottom: '1px solid rgba(0,255,65,0.25)',
+      fontFamily: "'JetBrains Mono', monospace",
+    }}>
+      {/* Brand */}
+      <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+        <Terminal size={16} style={{ color: '#00ff41' }} />
+        <span style={{ fontSize: '0.875rem', fontWeight: 700, letterSpacing: '0.15em', color: '#00ff41', textTransform: 'uppercase' }}>
+          PRIVIX
+        </span>
       </NavLink>
 
-      <ul className="navbar-nav">
-        <li>
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`}
-          >
-            📊 Dashboard
-          </NavLink>
-        </li>
-        <li>
-          <NavLink
-            to="/scan"
-            className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`}
-          >
-            🔍 New Scan
-          </NavLink>
-        </li>
-        <li>
-          <NavLink
-            to="/results"
-            className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`}
-          >
-            📋 Results
-          </NavLink>
-        </li>
-        <li>
-          <NavLink
-            to="/settings"
-            className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`}
-          >
-            ⚙️ Settings
-          </NavLink>
-        </li>
+      {/* Nav Links */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        {/* Live indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '12px', fontSize: '0.65rem', color: 'rgba(0,255,65,0.6)', letterSpacing: '0.1em' }}>
+          <Activity size={10} />
+          <span>UPLINK ACTIVE</span>
+        </div>
+
+        <NavLink
+          to="/dashboard"
+          style={({ isActive }) => ({
+            display: 'flex', alignItems: 'center', gap: '7px',
+            padding: '6px 14px',
+            fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none',
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+            fontFamily: "'JetBrains Mono', monospace",
+            background: isActive ? 'rgba(0,255,65,0.12)' : 'transparent',
+            color: isActive ? '#00ff41' : 'rgba(0,255,65,0.4)',
+            border: isActive ? '1px solid rgba(0,255,65,0.4)' : '1px solid transparent',
+          })}
+        >
+          <LayoutDashboard size={13} />
+          <span className="hidden sm:inline">Dashboard</span>
+        </NavLink>
+
+        <NavLink
+          to="/settings"
+          style={({ isActive }) => ({
+            display: 'flex', alignItems: 'center', gap: '7px',
+            padding: '6px 14px',
+            fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none',
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+            fontFamily: "'JetBrains Mono', monospace",
+            background: isActive ? 'rgba(0,255,65,0.12)' : 'transparent',
+            color: isActive ? '#00ff41' : 'rgba(0,255,65,0.4)',
+            border: isActive ? '1px solid rgba(0,255,65,0.4)' : '1px solid transparent',
+          })}
+        >
+          <Settings size={13} />
+          <span className="hidden sm:inline">Settings</span>
+        </NavLink>
+
         {alertCount > 0 && (
-          <li className="navbar-alert-badge">
-            <NavLink to="/results" className="navbar-link">
-              🔔
-              <span className="alert-count">{alertCount > 9 ? '9+' : alertCount}</span>
-            </NavLink>
-          </li>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: '20px', height: '20px',
+            background: '#ff003c', color: '#000', 
+            fontSize: '0.6rem', fontWeight: 900,
+            marginLeft: '4px', fontFamily: "'JetBrains Mono', monospace",
+          }}>
+            {alertCount > 9 ? '9+' : alertCount}
+          </div>
         )}
-      </ul>
+      </div>
     </nav>
   );
 }
