@@ -4,7 +4,7 @@ import { Shield, ShieldAlert, Activity, Globe, History, Search, Terminal, AlertT
 import ExposureCard from '../components/ExposureCard';
 import { getDashboard, requestDeletion, startScan } from '../services/api';
 import CyberTimeline from '../components/CyberTimeline';
-import Heatmap from '../components/Heatmap';
+import ExposureGlobe from '../components/ExposureGlobe';
 import StatCounter from '../components/StatCounter';
 import RadarScanner from '../components/RadarScanner';
 import BreachReveal from '../components/BreachReveal';
@@ -467,7 +467,7 @@ export default function Dashboard({
             ● LIVE
           </span>
         </div>
-        <div style={{ padding: '20px' }}><Heatmap /></div>
+        <ExposureGlobe findings={findings || []} />
       </Panel>
 
       {/* ── Detections ── */}
