@@ -17,6 +17,8 @@ const corsOptions = {
 };
 const scanRoutes = require('./routes/scanRoutes');
 const resultRoutes = require('./routes/resultRoutes');
+const aiRoutes = require('./routes/aiRoutes');
+const aiAdviceRoutes = require('./routes/aiAdviceRoutes');
 const recheckJob = require('../../scheduler/jobs/recheckJob');
 const actionJob = require('../../scheduler/jobs/actionJob');
 
@@ -38,6 +40,8 @@ app.use((req, res, next) => {
 // ── Routes ───────────────────────────────────────────────────
 app.use('/api/scans', scanRoutes);
 app.use('/api/results', resultRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/ai-advice', aiAdviceRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

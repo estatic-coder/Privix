@@ -161,6 +161,16 @@ npm run install:all
 npm run dev
 ```
 
+### 🔐 Environment Variables
+
+Create a `.env` file in `backend/` and add your Gemini API key:
+
+```bash
+GEMINI_API_KEY=your_google_gemini_api_key
+```
+
+Without this key, the **Privacy Advice** feature (`/api/ai/advice`) will return an error.
+
 > **Backend API** → `http://localhost:3001`  
 > **Frontend UI** → `http://localhost:5173`
 

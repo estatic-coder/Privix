@@ -21,6 +21,7 @@ function AppContent() {
   // Store findings & risk score from the latest scan response
   const [latestFindings, setLatestFindings] = useState([]);
   const [latestRiskScore, setLatestRiskScore] = useState(null);
+  const [latestScanId, setLatestScanId] = useState(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,6 +33,7 @@ function AppContent() {
       setHasScanned(false);
       setLatestFindings([]);
       setLatestRiskScore(null);
+      setLatestScanId(null);
       sessionStorage.removeItem(SESSION_SCANNED_KEY);
     }
   }, [location.pathname]);
@@ -66,6 +68,7 @@ function AppContent() {
     // Replace — never merge with previous results
     setLatestFindings(deduped);
     setLatestRiskScore(data.riskScore ?? null);
+    setLatestScanId(data.scan?.id || null);
     setHasScanned(true);
     sessionStorage.setItem(SESSION_SCANNED_KEY, 'true');
 
@@ -78,6 +81,7 @@ function AppContent() {
     setHasScanned(false);
     setLatestFindings([]);
     setLatestRiskScore(null);
+    setLatestScanId(null);
     sessionStorage.removeItem(SESSION_SCANNED_KEY);
   };
 
@@ -130,6 +134,7 @@ function AppContent() {
                   hasScanned={hasScanned}
                   findings={latestFindings}
                   riskScore={latestRiskScore}
+                  currentScanId={latestScanId}
                   onScanComplete={handleScanComplete}
                   onNewScan={handleNewScan}
                   onFindingsUpdate={handleFindingsUpdate}

@@ -2,13 +2,14 @@ import { useState, useRef, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, ShieldAlert, Activity, Globe, History, Search, Terminal, AlertTriangle, CheckCircle2, RefreshCw, Zap } from 'lucide-react';
 import ExposureCard from '../components/ExposureCard';
-import { getDashboard, requestDeletion, startScan } from '../services/api';
+import { chatPrivacyAdvice, getDashboard, requestDeletion, startScan } from '../services/api';
 import CyberTimeline from '../components/CyberTimeline';
 import ExposureGlobe from '../components/ExposureGlobe';
 import StatCounter from '../components/StatCounter';
 import RadarScanner from '../components/RadarScanner';
 import BreachReveal from '../components/BreachReveal';
 import FilterPanel from '../components/FilterPanel';
+import FloatingChatWidget from '../components/FloatingChatWidget';
 
 const mono = { fontFamily: "'JetBrains Mono', monospace" };
 
@@ -31,6 +32,19 @@ const MOCK_LOGS = [
   "MATCH FOUND: Critical exposure in database A...",
   "MATCH FOUND: High risk in data broker node...",
   "Finalizing analytical report...",
+];
+
+const DEFAULT_CHAT_QUESTIONS = [
+  'What is my biggest risk?',
+  'How do I fix this quickly?',
+  'Show step-by-step actions',
+  'Is my identity at risk?',
+];
+
+const DEFAULT_FOLLOW_UPS = [
+  'What should I do in the next 24 hours?',
+  'Which accounts should I secure first?',
+  'How can I reduce future exposure?',
 ];
 
 // ── Shared input style ───────────────────────────────────────────────────────
@@ -93,6 +107,7 @@ export default function Dashboard({
   hasScanned,
   findings,
   riskScore,
+  currentScanId,
   onScanComplete,
   onNewScan,
   onFindingsUpdate,
@@ -109,11 +124,16 @@ export default function Dashboard({
   const [breachFindings, setBreachFindings] = useState(null);
   const [filters, setFilters] = useState({});
   const [currentLogs, setCurrentLogs] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [loadingAdvice, setLoadingAdvice] = useState(false);
+  const [adviceError, setAdviceError] = useState('');
+  const [suggestedQuestions, setSuggestedQuestions] = useState([]);
 
   const activeTimersRef = useRef([]);
   const progressIntervalRef = useRef(null);
   const pendingScanDataRef = useRef(null);
   const terminalRef = useRef(null);
+  const chatScrollRef = useRef(null);
 
   useEffect(() => {
     if (userId && hasScanned) {
@@ -128,6 +148,12 @@ export default function Dashboard({
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
   }, [currentLogs]);
+
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [messages, loadingAdvice]);
 
   async function loadDashboard(silent = false) {
     try {
@@ -174,6 +200,9 @@ export default function Dashboard({
     pendingScanDataRef.current = null;
     setProgress(0);
     setCurrentLogs([MOCK_LOGS[0]]);
+    setMessages([]);
+    setAdviceError('');
+    setSuggestedQuestions([]);
     setModuleStatuses(DEFAULT_MODULES.map((m) => ({ ...m, status: 'running' })));
     setScanning(true);
     if (onNewScan) onNewScan();
@@ -239,10 +268,61 @@ export default function Dashboard({
     } catch (err) { console.error('Redaction failed:', err); }
   }
 
+  function rotateFollowUps(lastQuestion) {
+    const normalized = (lastQuestion || '').toLowerCase();
+
+    if (normalized.includes('biggest risk') || normalized.includes('identity')) {
+      return [
+        'How likely is account takeover?',
+        'What signs of fraud should I watch for?',
+        'How can I protect my identity now?',
+      ];
+    }
+
+    if (normalized.includes('step') || normalized.includes('quickly')) {
+      return [
+        'Can you rank actions by impact?',
+        'What can I delegate or automate?',
+        'What should I do weekly after this?',
+      ];
+    }
+
+    return DEFAULT_FOLLOW_UPS;
+  }
+
+  async function sendQuestionToAdvisor(question) {
+    const text = typeof question === 'string' ? question.trim() : '';
+    if (!text) return;
+
+    setAdviceError('');
+    setLoadingAdvice(true);
+    setMessages((prev) => [...prev, { role: 'user', text }]);
+
+    try {
+      const res = await chatPrivacyAdvice(text, currentScanId, riskScore);
+      setMessages((prev) => [...prev, { role: 'ai', text: res.answer || 'I could not generate a response right now.' }]);
+      setSuggestedQuestions(rotateFollowUps(text));
+    } catch (err) {
+      setAdviceError(err.message || 'Failed to generate AI response.');
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'ai',
+          text: 'I hit a response error. Please try again, or ask a shorter question.',
+        },
+      ]);
+    } finally {
+      setLoadingAdvice(false);
+    }
+  }
+
   function resetScan() {
     setScanning(false);
     setProgress(0);
     setScanError('');
+    setMessages([]);
+    setAdviceError('');
+    setSuggestedQuestions([]);
     setForm({ name: '', email: '', phone: '', username: '' });
     if (onNewScan) onNewScan();
   }
@@ -494,11 +574,90 @@ export default function Dashboard({
         )}
       </div>
 
+      {/* ── AI Advice ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <SectionHeading icon={Zap} label="Privacy Assistant" color="#ffb86c" />
+        <Panel>
+          <div style={{ marginBottom: '12px' }}>
+            <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', lineHeight: 1.6 }}>
+              Ask direct questions about your exposure. The assistant uses your current findings and risk score.
+            </p>
+          </div>
+
+          <div ref={chatScrollRef} className="privacy-chat-messages">
+            {messages.length === 0 && (
+              <div className="privacy-chat-empty-state">
+                <p className="privacy-chat-empty-label">Quick questions</p>
+                <div className="privacy-chat-chip-row">
+                  {DEFAULT_CHAT_QUESTIONS.map((question) => (
+                    <button
+                      key={question}
+                      type="button"
+                      className="privacy-chat-chip"
+                      disabled={loadingAdvice}
+                      onClick={() => sendQuestionToAdvisor(question)}
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {messages.map((message, index) => (
+              <div
+                key={`${message.role}-${index}`}
+                className={`privacy-chat-message-row ${message.role === 'user' ? 'is-user' : 'is-ai'}`}
+              >
+                <div className={`privacy-chat-bubble ${message.role === 'user' ? 'is-user' : 'is-ai'}`}>
+                  {message.text}
+                </div>
+              </div>
+            ))}
+
+            {loadingAdvice && (
+              <div className="privacy-chat-message-row is-ai">
+                <div className="privacy-chat-bubble is-ai is-thinking">AI is thinking...</div>
+              </div>
+            )}
+          </div>
+
+          {adviceError && (
+            <p style={{ margin: '10px 0 0', color: '#ff003c', fontSize: '0.78rem' }}>
+              {adviceError}
+            </p>
+          )}
+
+          {messages.length > 0 && suggestedQuestions.length > 0 && (
+            <div style={{ marginTop: '12px' }}>
+              <p className="privacy-chat-empty-label" style={{ marginBottom: '6px' }}>
+                Suggested follow-ups
+              </p>
+              <div className="privacy-chat-chip-row">
+                {suggestedQuestions.slice(0, 3).map((question) => (
+                  <button
+                    key={question}
+                    type="button"
+                    className="privacy-chat-chip"
+                    disabled={loadingAdvice}
+                    onClick={() => sendQuestionToAdvisor(question)}
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </Panel>
+      </div>
+
       {/* ── Timeline ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <SectionHeading icon={History} label="Incident Timeline" color="#00ffff" />
         <CyberTimeline findings={recentFindings} />
       </div>
+
+      <FloatingChatWidget currentScanId={currentScanId} riskScore={riskScore} />
     </div>
   );
 }

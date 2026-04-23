@@ -65,3 +65,31 @@ export async function healthCheck() {
   const res = await fetch(`${API_BASE}/health`);
   return res.json();
 }
+
+export async function generatePrivacyAdvice(scanId, riskScore) {
+  const res = await fetch(`${API_BASE}/ai/advice`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scanId, riskScore }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to generate AI advice');
+  }
+  return data;
+}
+
+export async function chatPrivacyAdvice(question, scanId, riskScore) {
+  const res = await fetch(`${API_BASE}/ai-advice/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, scanId, riskScore }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to get AI response');
+  }
+  return data;
+}

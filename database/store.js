@@ -80,6 +80,11 @@ function getScansByUserId(userId) {
   return db.scans.filter((s) => s.userId === userId);
 }
 
+function getLatestScan() {
+  if (db.scans.length === 0) return null;
+  return db.scans[db.scans.length - 1] || null;
+}
+
 // ── Findings ─────────────────────────────────────────────────
 function addFinding(scanId, userId, finding) {
   // Deduplicate: if a finding for this source already exists for this user,
@@ -197,6 +202,7 @@ module.exports = {
   updateScan,
   getScanById,
   getScansByUserId,
+  getLatestScan,
   addFinding,
   getFindingsByScan,
   getFindingsByUser,

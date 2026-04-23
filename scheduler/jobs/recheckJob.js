@@ -10,21 +10,27 @@ const { processResults } = require('../../matcher-engine/scoring');
 const store = require('../../database/store');
 
 let recheckInterval = null;
+const MAX_TIMER_DELAY_MS = 2_147_483_647;
 
 /**
  * Start the periodic recheck job.
  * @param {number} intervalMs - Interval in ms (default: 30 days)
  */
 function start(intervalMs = 30 * 24 * 60 * 60 * 1000) {
-  console.log(`[Scheduler] Recheck job started (interval: ${intervalMs}ms)`);
-
-  // For demo/dev, we use a much shorter interval
   const devInterval = process.env.NODE_ENV === 'development' ? 5 * 60 * 1000 : intervalMs;
+  const safeInterval = Math.min(devInterval, MAX_TIMER_DELAY_MS);
+
+  console.log(`[Scheduler] Recheck job started (interval: ${safeInterval}ms)`);
+  if (safeInterval !== devInterval) {
+    console.warn(
+      `[Scheduler] Requested interval ${devInterval}ms exceeds Node timer limit; using ${safeInterval}ms instead.`
+    );
+  }
 
   recheckInterval = setInterval(async () => {
     console.log(`\n[Scheduler] ──── Running periodic recheck ────`);
     await recheckAllUsers();
-  }, devInterval);
+  }, safeInterval);
 }
 
 /**
