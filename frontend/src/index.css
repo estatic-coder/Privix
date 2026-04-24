@@ -546,6 +546,72 @@ body {
   cursor: not-allowed;
 }
 
+/* ── Quick questions column layout ───────────────────────────── */
+.quick-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+/* Shared base: quick question buttons + Done button */
+.quick-btn,
+.done-btn {
+  width: 100%;
+  border: 1px solid rgba(0, 255, 65, 0.4);
+  background: transparent;
+  color: #00ff9c;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  text-align: left;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease, transform 120ms ease;
+}
+
+.quick-btn:hover:not(:disabled),
+.done-btn:hover:not(:disabled) {
+  background: rgba(0, 255, 65, 0.12);
+  border-color: rgba(0, 255, 65, 0.75);
+}
+
+.quick-btn:active:not(:disabled),
+.done-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.quick-btn:disabled,
+.done-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Done button — subtle separator to distinguish it */
+.done-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  border-color: rgba(0, 255, 65, 0.25);
+  color: rgba(0, 255, 155, 0.7);
+  font-size: 0.68rem;
+}
+
+.done-btn:hover:not(:disabled) {
+  border-color: rgba(0, 255, 65, 0.55);
+  color: #00ff9c;
+  background: rgba(0, 255, 65, 0.07);
+}
+
+/* Disabled / session-ended input */
+.floating-ai-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: rgba(143, 255, 171, 0.4);
+}
+
 .floating-ai-message-row {
   display: flex;
   width: 100%;

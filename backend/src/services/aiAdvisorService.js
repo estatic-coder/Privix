@@ -144,29 +144,101 @@ Rules:
 `;
 }
 
-function buildChatPrompt(findings, riskScore, question) {
-  return `
-You are a helpful privacy assistant for Privix.
+const INTENT_RULES = {
+  RISK_SUMMARY:
+    'Identify the SINGLE biggest risk from the findings and explain clearly why it matters. Be specific — name the source and data type exposed.',
+  QUICK_FIX:
+    'Give exactly 2–3 concrete, immediate actions the user can take TODAY to reduce their exposure. No theory — only actionable steps.',
+  STEP_BY_STEP:
+    'Provide a numbered step-by-step action plan (at least 4 steps). Each step must be a clear, distinct action with no duplication.',
+  IDENTITY_RISK:
+    'Start your answer with YES or NO depending on whether identity theft is a real risk. Then briefly explain why, referencing the findings.',
+  GENERAL:
+    'Give helpful, concise privacy advice tailored to the question and the findings.',
+};
 
-User risk data:
-${JSON.stringify({ riskScore, findings }, null, 2)}
+/**
+ * Local fallback that returns a DIFFERENT answer for each intent.
+ * Used when AI is unavailable OR returns an empty response.
+ */
+function buildIntentFallback(findings, riskScore, intent) {
+  const safeFindings = normalizeFindings(findings);
+  const riskTier = getRiskTier(riskScore);
+  const topRisks = buildTopRiskStatements(safeFindings);
+  const actions = buildActionPlan(riskTier, safeFindings);
 
-User question:
-"${question}"
+  const topRisk = topRisks[0] || 'Unknown exposure detected.';
+  const action1 = actions[0] || 'Enable multi-factor authentication on your primary accounts.';
+  const action2 = actions[1] || 'Rotate any reused or weak passwords.';
+  const action3 = actions[2] || 'Submit data removal requests to broker sites.';
 
-Respond in a clear, concise, actionable way.
-Keep it conversational (like a helpful assistant).
+  const criticalCount = safeFindings.filter((f) => f.risk === 'critical').length;
+  const highCount = safeFindings.filter((f) => f.risk === 'high').length;
 
-Also generate 3-4 relevant follow-up actions the user should take next.
-Include "Done" as one option.
+  switch (intent) {
+    case 'RISK_SUMMARY':
+      return topRisks.length > 0
+        ? `Your biggest risk: ${topRisk} With a risk score of ${riskScore}, this is your most urgent concern and should be addressed immediately.`
+        : `Your risk score is ${riskScore}. No specific critical exposures found yet, but keep monitoring for new leaks.`;
 
-Return JSON:
-{
-  "answer": "...",
-  "followUps": ["...", "...", "...", "Done"]
+    case 'QUICK_FIX':
+      return `Here are your top immediate actions:\n1. ${action1}\n2. ${action2}\n3. ${action3}`;
+
+    case 'STEP_BY_STEP':
+      return [
+        '1. Log in to your primary email and enable two-factor authentication.',
+        '2. Change passwords on any accounts linked to exposed email addresses.',
+        `3. ${action3}`,
+        '4. Set a Google Alert for your full name and email to monitor future leaks.',
+        '5. Re-scan in 7 days to verify exposure is reduced.',
+      ].join('\n');
+
+    case 'IDENTITY_RISK': {
+      const identityAtRisk = criticalCount > 0 || highCount > 0 || riskScore >= 50;
+      return identityAtRisk
+        ? `YES — your identity is at risk. You have ${criticalCount} critical and ${highCount} high-severity exposures with a risk score of ${riskScore}. Act now: freeze your credit and enable fraud alerts.`
+        : `NO — your identity risk appears low right now (score: ${riskScore}). However, stay vigilant by enabling MFA and monitoring for new breaches.`;
+    }
+
+    default:
+      return `Your privacy score is ${riskScore}. ${topRisk} Focus on enabling MFA and removing your data from broker sites.`;
+  }
 }
-`;
+
+function buildChatPrompt(findings, riskScore, question, intent) {
+  const rule = INTENT_RULES[intent] || INTENT_RULES.GENERAL;
+
+  // Slim the findings to avoid overwhelming the prompt — send only the top 5
+  // most severe items with just the fields Gemini needs.
+  const slimFindings = normalizeFindings(findings)
+    .sort((a, b) => severityWeight(b.risk) - severityWeight(a.risk))
+    .slice(0, 5)
+    .map((f) => ({
+      source: f.source,
+      risk: f.risk,
+      dataFound: Array.isArray(f.dataFound) ? f.dataFound.slice(0, 4) : [],
+    }));
+
+  return `You are a cybersecurity privacy assistant for Privix.
+
+User data:
+- Risk score: ${riskScore}/100
+- Top exposures (worst first): ${JSON.stringify(slimFindings)}
+
+User intent: ${intent}
+User question: "${question}"
+
+STRICT RULES:
+- Answer ONLY according to the INTENT RULE below. Do NOT give a generic privacy overview.
+- Be concise and direct. Max 100 words.
+- No filler phrases like "Great question" or "Certainly".
+
+INTENT RULE: ${rule}
+
+Return ONLY this JSON (no markdown, no extra text):
+{"answer": "...", "followUps": ["...", "...", "...", "Done"]}`;
 }
+
 
 function extractJson(text) {
   if (!text || typeof text !== 'string') return null;
@@ -321,9 +393,10 @@ async function generatePrivacyAdvice(findings, riskScore) {
   }
 }
 
-async function generatePrivacyChatAnswer(findings, riskScore, question) {
+async function generatePrivacyChatAnswer(findings, riskScore, question, intent = 'GENERAL') {
   const safeFindings = normalizeFindings(findings);
   const safeQuestion = typeof question === 'string' ? question.trim() : '';
+  const safeIntent = typeof intent === 'string' && INTENT_RULES[intent] ? intent : 'GENERAL';
 
   if (!safeQuestion) {
     return {
@@ -334,13 +407,8 @@ async function generatePrivacyChatAnswer(findings, riskScore, question) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    const fallback = buildFallbackAdvice(
-      safeFindings,
-      riskScore,
-      'GEMINI_API_KEY is not configured.'
-    );
     return {
-      answer: `${fallback.summary} Next step: ${fallback.actions[0] || 'Enable MFA on your primary email account.'}`,
+      answer: buildIntentFallback(safeFindings, riskScore, safeIntent),
       followUps: normalizeFollowUps(DEFAULT_CHAT_FOLLOW_UPS),
     };
   }
@@ -348,33 +416,24 @@ async function generatePrivacyChatAnswer(findings, riskScore, question) {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const prompt = buildChatPrompt(safeFindings, riskScore, safeQuestion);
+    const prompt = buildChatPrompt(safeFindings, riskScore, safeQuestion, safeIntent);
     const result = await model.generateContent(prompt);
     const text = result.response.text();
     const parsed = extractJson(text);
     const payload = normalizeChatPayload(parsed, text);
 
     if (!payload.answer) {
-      const fallback = buildFallbackAdvice(
-        safeFindings,
-        riskScore,
-        'AI returned empty response.'
-      );
       return {
-        answer: fallback.summary,
+        answer: buildIntentFallback(safeFindings, riskScore, safeIntent),
         followUps: normalizeFollowUps(DEFAULT_CHAT_FOLLOW_UPS),
       };
     }
 
     return payload;
   } catch (err) {
-    const fallback = buildFallbackAdvice(
-      safeFindings,
-      riskScore,
-      `AI provider error: ${err && err.message ? err.message : 'unknown error'}`
-    );
+    console.error('[AI Chat] Gemini error:', err && err.message);
     return {
-      answer: `${fallback.summary} Suggested action: ${fallback.actions[0] || 'Rotate reused passwords immediately.'}`,
+      answer: buildIntentFallback(safeFindings, riskScore, safeIntent),
       followUps: normalizeFollowUps(DEFAULT_CHAT_FOLLOW_UPS),
     };
   }

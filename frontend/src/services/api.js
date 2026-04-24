@@ -80,11 +80,11 @@ export async function generatePrivacyAdvice(scanId, riskScore) {
   return data;
 }
 
-export async function chatPrivacyAdvice(question, scanId, riskScore) {
+export async function chatPrivacyAdvice(question, scanId, riskScore, intent = 'GENERAL') {
   const res = await fetch(`${API_BASE}/ai-advice/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, scanId, riskScore }),
+    body: JSON.stringify({ question, scanId, riskScore, intent }),
   });
 
   const data = await res.json();

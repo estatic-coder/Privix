@@ -6,7 +6,7 @@ const { calculateGlobalRisk } = require('../../../matcher-engine/scoring');
 const router = express.Router();
 
 router.post('/chat', async (req, res) => {
-  const { question, scanId, riskScore } = req.body || {};
+  const { question, scanId, riskScore, intent } = req.body || {};
 
   if (!question || typeof question !== 'string' || !question.trim()) {
     return res.status(400).json({ error: 'question is required' });
@@ -21,7 +21,8 @@ router.post('/chat', async (req, res) => {
     const chatPayload = await generatePrivacyChatAnswer(
       findings,
       resolvedRiskScore,
-      question.trim()
+      question.trim(),
+      intent || 'GENERAL'
     );
     return res.json(chatPayload);
   } catch (err) {
