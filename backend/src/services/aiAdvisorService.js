@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenAI } = require('@google/genai');
 
 const RISK_LABELS = {
   critical: 'critical',
@@ -243,7 +243,13 @@ Return ONLY this JSON (no markdown, no extra text):
 function extractJson(text) {
   if (!text || typeof text !== 'string') return null;
 
-  const stripped = text
+  // Strip thinking-model thought blocks (e.g. <think>...</think> or <thinking>...</thinking>)
+  const withoutThoughts = text
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
+    .trim();
+
+  const stripped = withoutThoughts
     .replace(/^```json\s*/i, '')
     .replace(/^```\s*/i, '')
     .replace(/```$/i, '')
@@ -365,12 +371,15 @@ async function generatePrivacyAdvice(findings, riskScore) {
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const ai = new GoogleGenAI({ apiKey });
     const prompt = buildPrompt(safeFindings, riskScore);
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const result = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite-preview',
+      contents: prompt,
+      config: { thinkingConfig: { thinkingLevel: 'low' } },
+    });
+    const text = result.text;
     const parsed = extractJson(text);
     const normalized = normalizeAdvice(parsed, text);
 
@@ -402,6 +411,7 @@ async function generatePrivacyChatAnswer(findings, riskScore, question, intent =
     return {
       answer: 'Please ask a question about your exposure risk or what to do next.',
       followUps: normalizeFollowUps(DEFAULT_CHAT_FOLLOW_UPS),
+      fromFallback: true,
     };
   }
 
@@ -410,15 +420,20 @@ async function generatePrivacyChatAnswer(findings, riskScore, question, intent =
     return {
       answer: buildIntentFallback(safeFindings, riskScore, safeIntent),
       followUps: normalizeFollowUps(DEFAULT_CHAT_FOLLOW_UPS),
+      fromFallback: true,
     };
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const ai = new GoogleGenAI({ apiKey });
     const prompt = buildChatPrompt(safeFindings, riskScore, safeQuestion, safeIntent);
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+
+    const result = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite-preview',
+      contents: prompt,
+      config: { thinkingConfig: { thinkingLevel: 'low' } },
+    });
+    const text = result.text;
     const parsed = extractJson(text);
     const payload = normalizeChatPayload(parsed, text);
 
@@ -426,6 +441,7 @@ async function generatePrivacyChatAnswer(findings, riskScore, question, intent =
       return {
         answer: buildIntentFallback(safeFindings, riskScore, safeIntent),
         followUps: normalizeFollowUps(DEFAULT_CHAT_FOLLOW_UPS),
+        fromFallback: true,
       };
     }
 
@@ -435,6 +451,7 @@ async function generatePrivacyChatAnswer(findings, riskScore, question, intent =
     return {
       answer: buildIntentFallback(safeFindings, riskScore, safeIntent),
       followUps: normalizeFollowUps(DEFAULT_CHAT_FOLLOW_UPS),
+      fromFallback: true,
     };
   }
 }

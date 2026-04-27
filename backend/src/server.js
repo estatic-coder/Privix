@@ -4,6 +4,8 @@
 // Main entry point. Mounts all routes and starts the API.
 // ============================================================
 
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 

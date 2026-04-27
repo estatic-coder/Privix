@@ -522,7 +522,10 @@ body {
 
 .floating-ai-followups {
   display: flex;
-  justify-content: flex-start;
+  flex-direction: column;
+  border-top: 1px solid rgba(0, 255, 65, 0.18);
+  padding: 8px 10px;
+  gap: 0;
   animation: floatingAiFollowUpsIn 220ms ease;
 }
 

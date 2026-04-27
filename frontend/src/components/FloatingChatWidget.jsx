@@ -117,7 +117,11 @@ export default function FloatingChatWidget({ currentScanId, riskScore }) {
     try {
       const res = await chatPrivacyAdvice(question, currentScanId, riskScore, intent);
       const answer = res.answer || 'I could not generate a response right now.';
-      responseCacheRef.current.set(cacheKey, answer);
+      // Only cache genuine AI responses — never cache fallback/error responses
+      // so the next click retries the API and gets a real answer.
+      if (!res.fromFallback) {
+        responseCacheRef.current.set(cacheKey, answer);
+      }
       appendMessage(createMessage('ai', answer));
     } catch (err) {
       setError(err.message || 'Failed to reach the assistant.');
@@ -235,15 +239,15 @@ export default function FloatingChatWidget({ currentScanId, riskScore }) {
               </div>
             )}
 
-            {/* ── Persistent quick questions after every AI response ── */}
-            {showQuickQuestions && (
-              <QuickQuestions
-                onQuestionClick={handleQuestion}
-                onDone={handleDone}
-                disabled={loading}
-              />
-            )}
           </div>
+
+          {showQuickQuestions && (
+            <QuickQuestions
+              onQuestionClick={handleQuestion}
+              onDone={handleDone}
+              disabled={loading}
+            />
+          )}
 
           {error && <p className="floating-ai-error">{error}</p>}
 
